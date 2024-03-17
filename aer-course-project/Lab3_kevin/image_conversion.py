@@ -38,6 +38,7 @@ def imageload(folder_path, camera_matrix, distortion_coefficients):
     return images
 
 def detect_circles(images):
+
     cords = []
     for image in images:
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
@@ -119,14 +120,25 @@ def conv_C_WB(point_body, drone_position, drone_orientation):
     return point_world.T
 
 if __name__ == "__main__":
-	folder_path = "../lab3_andrew/images"
+
+    #Load images and files
+    folder_path = "../lab3_andrew/images"
     file_path = "../lab3_andrew/lab3_pose.csv"
+
+    #Create pandas df
     drone_data = pd.read_csv(file_path)
+
+    #Arrays of pose information
     drone_position = drone_data[["p_x", "p_y", "p_z"]].values
     drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
+    
+    #Load camera params
     camera_matrix, distortion_coefficients = camera_param()
     images = imageload(folder_path, camera_matrix, distortion_coefficients)
+
+    #Detect circle centers
     img_coordinates = detect_circles(images)
+
     T_CB = np.array([[0, -1, 0,0],
                     [-1, 0, 0, 0],
                     [0, 0, -1, 0],
