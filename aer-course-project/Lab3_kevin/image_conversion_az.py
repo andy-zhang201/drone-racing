@@ -243,10 +243,7 @@ def find_transforms(data):
 
 
 if __name__ == "__main__":
-    folder_path = "../lab3_andrew/images"
-    file_path = "../lab3_andrew/lab3_pose.csv"
-
-    ####
+    folder_path = "img"
     filename = "../lab3_andrew/lab3_pose.csv" # Change this to the path of your CSV file
     data = read_csv_file(filename)
 
@@ -255,9 +252,6 @@ if __name__ == "__main__":
 
     ###
 
-    drone_data = pd.read_csv(file_path)
-    drone_position = drone_data[["p_x", "p_y", "p_z"]].values
-    drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
     camera_matrix, distortion_coefficients = camera_param()
     images = imageload(folder_path, camera_matrix, distortion_coefficients)
     
