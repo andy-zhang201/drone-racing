@@ -317,8 +317,3 @@ if __name__ == "__main__":
 
     print("Accurately localized positions of the landmarks:")
     print(landmark_positions)
-
-
-# 1 need to ignore all photos without circle, labeled as -1,-1 at the moment
-# Should also ignore photoes that arent consecutively finding circle since there are still a few false positives but very little
-# 2 average the world measured values to find the 6 image coordinates
