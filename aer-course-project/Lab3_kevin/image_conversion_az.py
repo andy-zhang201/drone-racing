@@ -179,19 +179,19 @@ def find_world_coords_from_body(points_body, T_WB):
     return points_world_list
 
 if __name__ == "__main__":
-    folder_path = "img"
-    filename = "../lab3_andrew/lab3_pose.csv" # Change this to the path of your CSV file
+    file_path = "img"
+    filename = "lab3_pose.csv" # Change this to the path of your CSV file
     
     data = read_csv_file(filename)
 
     #Find tf to body frame from world frame 
     transforms_dict = find_transforms(data)
 
-    drone_data = pd.read_csv(file_path)
+    drone_data = pd.read_csv(filename)
     drone_position = drone_data[["p_x", "p_y", "p_z"]].values
     drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
     camera_matrix, distortion_coefficients = camera_param()
-    images = imageload(folder_path, camera_matrix, distortion_coefficients)
+    images = imageload(file_path, camera_matrix, distortion_coefficients)
     
     #Detect Circles in images. Return a dictionary of lists containing img_idx:[center_x,center_y].
     #If no detected circles, img_idx will not be present in dict
