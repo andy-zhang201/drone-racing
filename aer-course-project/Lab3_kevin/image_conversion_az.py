@@ -180,11 +180,6 @@ if __name__ == "__main__":
     data = read_csv_file(filename)
     transforms_dict = find_transforms(data)
 
-    # #Find drone positions and orientations
-    # drone_data = pd.read_csv(filename)
-    # drone_position = drone_data[["p_x", "p_y", "p_z"]].values
-    # drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
-
     #Load camera parameters
     camera_matrix, distortion_coefficients = camera_param()
 
