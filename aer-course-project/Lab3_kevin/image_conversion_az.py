@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import cv2 as cv
 import os, os.path
 import re
@@ -223,6 +224,7 @@ if __name__ == "__main__":
     samples=np.array([])
     for idx, points in points_world.items():
         for pt in points:
+            #Apply K-means clustering to identify landmark locations
 
             if samples.size ==0:
                 samples = np.array(pt).reshape(-1)
@@ -230,11 +232,26 @@ if __name__ == "__main__":
             else:
                 samples = np.vstack([samples,np.array(pt).reshape(-1)])
     
-    #Apply K-means clustering to identify landmark locations
+
     kmeans = KMeans(n_clusters=6, random_state=0).fit(samples)
+    breakpoint()
 
     # The centroids of the clusters are the accurately localized positions of the landmarks
     landmark_positions = kmeans.cluster_centers_
+    x = landmark_positions[:,0]
+    y = landmark_positions[:,1]
+
+    x_samples = samples[:,0]
+    y_samples = samples[:,1]
+
+    breakpoint()
 
     print("Accurately localized positions of the landmarks:")
     print(landmark_positions)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x_samples, y_samples, c='blue',alpha=0.5)  # s is size, c is color
+    plt.scatter(x, y, c='red')  # s is size, c is color
+    plt.title('Landmark Locations')
+    plt.xlabel('X coordinate')
+    plt.ylabel('Y coordinate')
+    plt.show()
