@@ -118,14 +118,6 @@ def detect_circles(images):
                         cords[img_idx] = [center] #Create list of tuples representing detected circle centers
 
                     circle_found = True
-        
-        if circle_found:
-            pass
-        # 	cv.imshow('Detected Circle', image)
-        # 	cv.waitKey(0)
-        # 	cv.destroyAllWindows()
-        else:
-            pass
 
     return cords
 
@@ -179,63 +171,68 @@ def find_world_coords_from_body(points_body, T_WB):
     return points_world_list
 
 if __name__ == "__main__":
+
+    #Define File paths
     file_path = "img"
     filename = "lab3_pose.csv" # Change this to the path of your CSV file
     
+    #Find rigid body transforms of drone in world frame 
     data = read_csv_file(filename)
-
-    #Find tf to body frame from world frame 
     transforms_dict = find_transforms(data)
 
+    #Find drone positions and orientations
     drone_data = pd.read_csv(filename)
     drone_position = drone_data[["p_x", "p_y", "p_z"]].values
     drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
+
+    #Load camera parameters
     camera_matrix, distortion_coefficients = camera_param()
+
+    #Load images in sorted order and correct distortion
     images = imageload(file_path, camera_matrix, distortion_coefficients)
     
     #Detect Circles in images. Return a dictionary of lists containing img_idx:[center_x,center_y].
-    #If no detected circles, img_idx will not be present in dict
+    #If no detected circles, img_idx will not be present
     img_coordinates = detect_circles(images)
 
+    #Load camera to body transform
     T_CB = np.array([[0, -1, 0,0],
                     [-1, 0, 0, 0],
                     [0, 0, -1, 0],
                     [0, 0, 0, 1]])
 
-    #Convert body frame coords into world frame coords. Final data representation is dict using img_idx:[x,y,z]
-    points_world = {}
 
-    #iterate through img_coordinates, convert pixel coords into world frame coords and then append to points_world
-    #For each image in which you found circles, find the world coordinates of all circles
+    #For each image index where you found circles, find the world coordinates of their centers
+    
+    points_world = {}
     for index, center_pixels in img_coordinates.items():
+
+        #Load drone positions in current timestamp
         drone_pos = drone_position[index]
         drone_orient = drone_orientation[index]
-
         drone_orient = quaternion.as_float_array(drone_orient)
 	
-	# Drone height can be dirrectly used for depth given the minimal angle change from steady level hover
+	    # Drone height can be directly used for image depth given the minimal angle change from steady level hover
         drone_height = drone_pos[2]
 
-        #Convert list of tuples to list of np arrays
+        #Find circle centers in body frame coordinates
         points_body = find_body_coords_from_px(center_pixels, camera_matrix, T_CB, drone_height) 
 
-        #Convert list of np arrays in body coords to list of np arrays in world coords 
+        #Find circle centers in world frame coordinates
         detected_points_world = find_world_coords_from_body(points_body, transforms_dict[index])
-
+        
+        #Append to dictionary
         if (index in points_world):
-            #append numpy array to list
             points_world[index].append(detected_points_world)
 
         else:
             world_coords_array = detected_points_world
             points_world[index] = world_coords_array
 
-    #K-means clustering
-    # Flatten the list of numpy arrays into a single numpy array
+    #Flatten the list of numpy arrays into a single numpy array
     samples=np.array([])
     for idx, points in points_world.items():
         for pt in points:
-            # breakpoint()
 
             if samples.size ==0:
                 samples = np.array(pt).reshape(-1)
@@ -243,7 +240,7 @@ if __name__ == "__main__":
             else:
                 samples = np.vstack([samples,np.array(pt).reshape(-1)])
     
-    # Apply K-Means clustering
+    #Apply K-means clustering to identify landmark locations
     kmeans = KMeans(n_clusters=6, random_state=0).fit(samples)
 
     # The centroids of the clusters are the accurately localized positions of the landmarks
