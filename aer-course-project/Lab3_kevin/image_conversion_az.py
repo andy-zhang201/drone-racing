@@ -234,7 +234,6 @@ if __name__ == "__main__":
     
 
     kmeans = KMeans(n_clusters=6, random_state=0).fit(samples)
-    breakpoint()
 
     # The centroids of the clusters are the accurately localized positions of the landmarks
     landmark_positions = kmeans.cluster_centers_
@@ -243,8 +242,6 @@ if __name__ == "__main__":
 
     x_samples = samples[:,0]
     y_samples = samples[:,1]
-
-    breakpoint()
 
     print("Accurately localized positions of the landmarks:")
     print(landmark_positions)
