@@ -180,10 +180,10 @@ if __name__ == "__main__":
     data = read_csv_file(filename)
     transforms_dict = find_transforms(data)
 
-    #Find drone positions and orientations
-    drone_data = pd.read_csv(filename)
-    drone_position = drone_data[["p_x", "p_y", "p_z"]].values
-    drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
+    # #Find drone positions and orientations
+    # drone_data = pd.read_csv(filename)
+    # drone_position = drone_data[["p_x", "p_y", "p_z"]].values
+    # drone_orientation = drone_data[["q_w", "q_x", "q_y", "q_z"]].apply(lambda row: quaternion.quaternion(row["q_w"], row["q_x"], row["q_y"], row["q_z"]), axis=1)
 
     #Load camera parameters
     camera_matrix, distortion_coefficients = camera_param()
@@ -207,13 +207,8 @@ if __name__ == "__main__":
     points_world = {}
     for index, center_pixels in img_coordinates.items():
 
-        #Load drone positions in current timestamp
-        drone_pos = drone_position[index]
-        drone_orient = drone_orientation[index]
-        drone_orient = quaternion.as_float_array(drone_orient)
-	
 	    # Drone height can be directly used for image depth given the minimal angle change from steady level hover
-        drone_height = drone_pos[2]
+        drone_height = transforms_dict[index][2,3]
 
         #Find circle centers in body frame coordinates
         points_body = find_body_coords_from_px(center_pixels, camera_matrix, T_CB, drone_height) 
