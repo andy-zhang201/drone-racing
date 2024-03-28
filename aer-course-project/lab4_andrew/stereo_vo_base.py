@@ -141,7 +141,6 @@ class VisualOdometry:
         focal_length = self.cam.f_len
 
         for coor in features_coor:
-            #Do I need to use focal_length or is f_u and f_v fine?
             u_l_prev = coor[0]
             u_r_prev = coor[2]
             v_l_prev = coor[1]
@@ -151,15 +150,16 @@ class VisualOdometry:
 
             prev_point = scale * np.array([
 
-                [0.5*(u_l_prev+u_r_prev)-c_u],
+                [0.5 * (u_l_prev + u_r_prev) - c_u],
 
-                [f_u/f_v*(0.5*(v_l_prev+v_r_prev)-c_v)],
+                [f_u / f_v * (0.5 * (v_l_prev + v_r_prev) - c_v)],
 
-                [f_u]
+                [focal_length]
             ])
 
             prev_point_cloud.append(prev_point)
 
+            #Current Frame
             u_l_cur = coor[4]
             u_r_cur = coor[6]
             v_l_cur = coor[5]
@@ -169,11 +169,11 @@ class VisualOdometry:
 
             cur_point = scale * np.array([
 
-                [0.5*(u_l_cur+u_r_cur)-c_u],
+                [0.5 * (u_l_cur + u_r_cur) - c_u],
 
-                [f_u/f_v*(0.5*(v_l_cur+v_r_cur)-c_v)],
+                [f_u / f_v * (0.5 * (v_l_cur + v_r_cur) - c_v)],
 
-                [f_u]
+                [focal_length]
             ])
 
             cur_point_cloud.append(cur_point)
@@ -181,17 +181,60 @@ class VisualOdometry:
 
         #RANSAC filtering of the features
         if len(cur_point_cloud) >= 3:
-            idx_drawn = np.random.default_rng().uniform(0,len(cur_point_cloud),3)
+            idx_drawn = np.random.default_rng().integers(0,len(cur_point_cloud),3)
 
-            drawn_points_right = 
+
+            drawn_points_prev = np.vstack([
+                prev_point_cloud[idx_drawn[0]].squeeze(),
+                prev_point_cloud[idx_drawn[1]].squeeze(),
+                prev_point_cloud[idx_drawn[2]].squeeze()
+            ])
+
+            drawn_points_cur = np.vstack([
+                cur_point_cloud[idx_drawn[0]].squeeze(),
+                cur_point_cloud[idx_drawn[1]].squeeze(),
+                cur_point_cloud[idx_drawn[2]].squeeze()
+            ])
+
+            #Compute Centroid
+            centroid_prev = np.mean(drawn_points_prev,axis=0)
+            centroid_cur = np.mean(drawn_points_cur,axis=0)
+        
+            #Compute cross covariance matrix
+            points_prev_origin = drawn_points_prev - centroid_prev
+            points_cur_origin = drawn_points_cur - centroid_cur
+
+            xcov = points_cur_origin @ points_prev_origin
+
+            #Utilize SVD
+            USV = np.linalg.svd(xcov)
+
+            #Compute Rotation Matrix
+            V_transpose = USV[2]
+            U = USV[0]
+
+            C_ba = V_transpose.T @ U.T
+
+            if np.linalg.det(C_ba) == -1:
+                #Recompute if rotation matrix invalid
+                U = -1.0*U[:,-1]
+                C_ba = V_transpose.T @ U.T
+                print('Corrected C_ba')
+
+            #Compute Translation
+            translation = centroid_cur.reshape(3,-1) - C_ba @ centroid_prev.reshape(3,-1)
+
+            #Form rigid body transform
+
 
         else:
             print('Not enough points RANSAC.')
 
+
+
         breakpoint()
 
         #Pose Estimation using ICP      
-        
         
         
         # replace (1) the dummy C and r to the estimated C and r. 
