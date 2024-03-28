@@ -121,8 +121,74 @@ class VisualOdometry:
         f_r_prev, f_r_cur = features_coor[:,2:4], features_coor[:,6:8]
         # ------------- start your code here -------------- #
         
-        
+        '''
+        Inputs: point clouds in both prev and cur frames, with correspondences between them
+        outputs: filtered point clouds and a transformation between prev camera frame and cur camera frame
+        Purpose: Translate inputs to outputs using RANSAC and ICP.
+
+        '''
+        #features_coor: idx0-2 is 
+
+        #Convert to point cloud
+        prev_point_cloud = []
+        cur_point_cloud = []
+
+        baseline = self.cam.baseline
+        c_u = self.cam.cu
+        c_v = self.cam.cv
+        f_u = self.cam.fx
+        f_v = self.cam.fy
+        focal_length = self.cam.f_len
+
+        for coor in features_coor:
+            #Do I need to use focal_length or is f_u and f_v fine?
+            u_l_prev = coor[0]
+            u_r_prev = coor[2]
+            v_l_prev = coor[1]
+            v_r_prev = coor[3]
+            
+            scale = baseline/(u_l_prev - u_r_prev)
+
+            prev_point = scale * np.array([
+
+                [0.5*(u_l_prev+u_r_prev)-c_u],
+
+                [f_u/f_v*(0.5*(v_l_prev+v_r_prev)-c_v)],
+
+                [f_u]
+            ])
+
+            prev_point_cloud.append(prev_point)
+
+            u_l_cur = coor[4]
+            u_r_cur = coor[6]
+            v_l_cur = coor[5]
+            v_r_cur = coor[7]
+
+            scale = baseline/(u_l_cur - u_r_cur)
+
+            cur_point = scale * np.array([
+
+                [0.5*(u_l_cur+u_r_cur)-c_u],
+
+                [f_u/f_v*(0.5*(v_l_cur+v_r_cur)-c_v)],
+
+                [f_u]
+            ])
+
+            cur_point_cloud.append(cur_point)
+
+
         #RANSAC filtering of the features
+        if len(cur_point_cloud) >= 3:
+            idx_drawn = np.random.default_rng().uniform(0,len(cur_point_cloud),3)
+
+            drawn_points_right = 
+
+        else:
+            print('Not enough points RANSAC.')
+
+        breakpoint()
 
         #Pose Estimation using ICP      
         
