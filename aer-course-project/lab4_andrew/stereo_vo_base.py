@@ -225,7 +225,7 @@ class VisualOdometry:
 
         else:
             # Num of RANSAC iterations
-            N = 5000
+            N = 1000
             residual_threshold = 5
             max_inlier_count = 0
             max_inlier_idx = -1
@@ -257,7 +257,7 @@ class VisualOdometry:
                 points_prev_origin = drawn_points_prev - centroid_prev
                 points_cur_origin = drawn_points_cur - centroid_cur
 
-                xcov = points_cur_origin @ points_prev_origin
+                xcov =  points_prev_origin @ points_cur_origin
 
                 #Utilize SVD
                 USV = np.linalg.svd(xcov)
@@ -272,7 +272,7 @@ class VisualOdometry:
                     [0,0,np.linalg.det(V_transpose.T) * np.linalg.det(U)]
                 ])
 
-                C_ba = U @ arr @ V_transpose
+                C_ba = U @ arr @ V_transpose #Vtrans.T @ arr @ U.T ??
 
                 #Compute Translation
                 translation = -C_ba @ (- C_ba.T @ centroid_cur.reshape(3,-1) + centroid_prev.reshape(3,-1))
