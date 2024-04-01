@@ -39,8 +39,8 @@ class VisualOdometry:
         self.kp_r_prev  = None                           # previous key points (right)
         self.des_r_prev = None                           # previoud descriptor key points (right)
         self.detector = cv.xfeatures2d.SIFT_create()     # using sift for detection
-        self.feature_color = (255, 191, 0)
-        self.inlier_color = (32,165,218)
+        self.feature_color = (255, 191, 0) # Blue
+        self.inlier_color = (32,165,218) #Yellow
 
             
     def feature_detection(self, img):
@@ -118,8 +118,6 @@ class VisualOdometry:
         centroid_prev_pose = np.mean(prev_inliers,axis=0)
         centroid_cur_pose = np.mean(cur_inliers,axis=0)
 
-        print(centroid_prev_pose)
-
         #Construct Wba
         prev_inliers_origin = prev_inliers - centroid_prev_pose
         cur_inliers_origin = cur_inliers - centroid_cur_pose
@@ -128,31 +126,29 @@ class VisualOdometry:
         for (prev_pt,cur_pt) in zip(prev_inliers_origin, cur_inliers_origin):
             Wba += np.dot(cur_pt.reshape(3,-1),prev_pt.reshape(1,-1))
         
+        #Utilize SVD
         USV_pose = np.linalg.svd(Wba)
         U = USV_pose[0]
         V_trans = USV_pose[2]
 
+        #Account for reflection in rotation matrix
         arr = np.array([
             [1,0,0],
             [0,1,0],
             [0,0,np.linalg.det(V_trans.T) * np.linalg.det(U)]
         ])
-
-        Cba = U @ arr @ V_trans
-
-        if np.linalg.det(Cba) == -1:
-            #Recompute if rotation matrix invalid
-            breakpoint()
-            V_trans[:,-1] = -V_trans[:,-1]
-            Cba = U @ arr @ V_trans
-            print('Corrected Cba')
-            print(f'CBA: {Cba}')
+        
+        #Compute Rotation Matrix
+        Cba = U @ arr@ V_trans
 
         #Compute Translation
-        translation = Cba @ centroid_cur_pose.reshape(3,-1) - centroid_prev_pose.reshape(3,-1)
+        translation = -Cba @ (-Cba.T @ centroid_cur_pose.reshape(3,-1) + centroid_prev_pose.reshape(3,-1))
 
         #Form rigid body transform
-        T_ba = np.vstack((np.hstack((Cba,translation)),np.array([0,0,0,1])))
+        T_ba = np.vstack(
+            (np.hstack((Cba,translation)),
+             np.array([0,0,0,1]))
+        )
         return T_ba
 
     def pose_estimation(self, features_coor):
@@ -229,7 +225,8 @@ class VisualOdometry:
 
         else:
             # Num of RANSAC iterations
-            N = 100
+            N = 5000
+            residual_threshold = 5
             max_inlier_count = 0
             max_inlier_idx = -1
             max_inlier_points =[]
@@ -269,18 +266,16 @@ class VisualOdometry:
                 V_transpose = USV[2]
                 U = USV[0]
 
-                C_ba = V_transpose.T @ U.T
+                arr = np.array([
+                    [1,0,0],
+                    [0,1,0],
+                    [0,0,np.linalg.det(V_transpose.T) * np.linalg.det(U)]
+                ])
 
-                if np.linalg.det(C_ba) == -1:
-                    #Recompute if rotation matrix invalid
-                    # breakpoint()
-                    U[:,-1] = -U[:,-1]
-                    C_ba = V_transpose.T @ U.T
-                    print('Corrected C_ba')
-                    print(f'CBA: {C_ba}')
+                C_ba = U @ arr @ V_transpose
 
                 #Compute Translation
-                translation = C_ba @ centroid_cur.reshape(3,-1) - centroid_prev.reshape(3,-1)
+                translation = -C_ba @ (- C_ba.T @ centroid_cur.reshape(3,-1) + centroid_prev.reshape(3,-1))
 
                 #Form rigid body transform
                 T_ba = np.vstack((np.hstack((C_ba,translation)),np.array([0,0,0,1])))
@@ -301,13 +296,13 @@ class VisualOdometry:
 
                     eucl_dist = np.linalg.norm(predicted_point - actual_point)
 
-                    if eucl_dist < 5:
+                    if eucl_dist < residual_threshold:
                         inlier_points.append([actual_point,point.squeeze()])
                         inlier_count+=1
                         inlier_ids.append(idx)
 
                 if inlier_count > max_inlier_count:
-                    print("better model found")
+                    # print("better model found")
                     max_inlier_count = inlier_count
                     max_inlier_idx = iters
                     max_inlier_points = inlier_points
@@ -321,8 +316,10 @@ class VisualOdometry:
         T_ba_ransac = tested_models[max_inlier_idx]
         
         inlier_corrs = max_inlier_points #Inlier point correspondences [[prev,cur],...]
-        breakpoint()
 
+        if len(inlier_corrs) < 3:
+            print('Not enough points ICP.')
+            return C, r, f_r_prev, f_r_cur
         #Pose Estimation using ICP
         prev_points_inliers = np.vstack([pair[0] for pair in inlier_corrs])
         cur_points_inliers = np.vstack([pair[1] for pair in inlier_corrs])
@@ -340,8 +337,6 @@ class VisualOdometry:
         # replace (1) the dummy C and r to the estimated C and r. 
         #         (2) the original features to the filtered features
         return C, r, f_r_prev, f_r_cur
-    
-    
 
     
     def processFirstFrame(self, img_left, img_right):
