@@ -9,6 +9,7 @@ import numpy as np
 import cv2 as cv
 import sys
 
+
 STAGE_FIRST_FRAME = 0
 STAGE_SECOND_FRAME = 1
 STAGE_DEFAULT_FRAME = 2
@@ -226,7 +227,7 @@ class VisualOdometry:
         else:
             # Num of RANSAC iterations
             N = 1000
-            residual_threshold = 5
+            residual_threshold = 7
             max_inlier_count = 0
             max_inlier_idx = -1
             max_inlier_points =[]
