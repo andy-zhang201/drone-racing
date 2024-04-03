@@ -150,7 +150,98 @@ class VisualOdometry:
             (np.hstack((Cba,translation)),
              np.array([0,0,0,1]))
         )
+
         return T_ba
+
+
+    def ransac(self, pcl_prev, pcl_cur, num_iters=100, residual_threshold=5):
+        max_inlier_count = 0
+        max_inlier_idx = -1
+        max_inlier_points =[]
+        max_inlier_ids = []
+
+        prev_point_cloud = pcl_prev
+        cur_point_cloud = pcl_cur
+
+        #Main for loop
+        for iters in range(num_iters):
+
+            #Sample points
+            idx_drawn = np.random.default_rng().integers(0,len(cur_point_cloud),3)
+
+
+            drawn_points_prev = np.vstack([
+                prev_point_cloud[idx_drawn[0]].squeeze(),
+                prev_point_cloud[idx_drawn[1]].squeeze(),
+                prev_point_cloud[idx_drawn[2]].squeeze()
+            ])
+
+            drawn_points_cur = np.vstack([
+                cur_point_cloud[idx_drawn[0]].squeeze(),
+                cur_point_cloud[idx_drawn[1]].squeeze(),
+                cur_point_cloud[idx_drawn[2]].squeeze()
+            ])
+
+            #Compute Centroid
+            centroid_prev = np.mean(drawn_points_prev,axis=0)
+            centroid_cur = np.mean(drawn_points_cur,axis=0)
+        
+            #Compute cross covariance matrix
+            points_prev_origin = drawn_points_prev - centroid_prev
+            points_cur_origin = drawn_points_cur - centroid_cur
+
+            xcov =  points_prev_origin @ points_cur_origin
+
+            #Utilize SVD
+            USV = np.linalg.svd(xcov)
+
+            #Compute Rotation Matrix
+            V_transpose = USV[2]
+            U = USV[0]
+
+            arr = np.array([
+                [1,0,0],
+                [0,1,0],
+                [0,0,np.linalg.det(V_transpose.T) * np.linalg.det(U)]
+            ])
+
+            C_ba = U @ arr @ V_transpose
+
+            #Compute Translation
+            translation = -C_ba @ (- C_ba.T @ centroid_cur.reshape(3,-1) + centroid_prev.reshape(3,-1))
+
+            #Form rigid body transform
+            T_ba = np.vstack((np.hstack((C_ba,translation)),np.array([0,0,0,1])))
+
+            #Apply transformation to whole point cloud
+            inlier_count = 0
+            inlier_points = []
+            inlier_ids = []
+
+            for (idx,point) in enumerate(cur_point_cloud):
+
+                #Convert to homogeneous coordinates
+                temp_point = point.reshape(3,-1)
+                temp_point = np.vstack((temp_point,1))
+
+                predicted_point = (T_ba @ temp_point)[:3].squeeze()
+                actual_point = prev_point_cloud[idx].squeeze()
+
+                eucl_dist = np.linalg.norm(predicted_point - actual_point)
+
+                if eucl_dist < residual_threshold:
+                    inlier_points.append([actual_point,point.squeeze()])
+                    inlier_count+=1
+                    inlier_ids.append(idx)
+
+            # Update inliers if better model is found
+            if inlier_count > max_inlier_count:
+                max_inlier_count = inlier_count
+                max_inlier_idx = iters
+                max_inlier_points = inlier_points
+                max_inlier_ids = inlier_ids
+
+        return max_inlier_points, max_inlier_ids
 
     def pose_estimation(self, features_coor):
         # dummy C and r
@@ -225,96 +316,9 @@ class VisualOdometry:
             return C, r, f_r_prev, f_r_cur
 
         else:
-            # Num of RANSAC iterations
-            N = 1000
-            residual_threshold = 7
-            max_inlier_count = 0
-            max_inlier_idx = -1
-            max_inlier_points =[]
-            max_inlier_ids = []
-            tested_models = []
 
-            for iters in range(N):
-                idx_drawn = np.random.default_rng().integers(0,len(cur_point_cloud),3)
-
-
-                drawn_points_prev = np.vstack([
-                    prev_point_cloud[idx_drawn[0]].squeeze(),
-                    prev_point_cloud[idx_drawn[1]].squeeze(),
-                    prev_point_cloud[idx_drawn[2]].squeeze()
-                ])
-
-                drawn_points_cur = np.vstack([
-                    cur_point_cloud[idx_drawn[0]].squeeze(),
-                    cur_point_cloud[idx_drawn[1]].squeeze(),
-                    cur_point_cloud[idx_drawn[2]].squeeze()
-                ])
-
-                #Compute Centroid
-                centroid_prev = np.mean(drawn_points_prev,axis=0)
-                centroid_cur = np.mean(drawn_points_cur,axis=0)
+            max_inlier_points, max_inlier_ids = self.ransac(prev_point_cloud,cur_point_cloud,10,5)
             
-                #Compute cross covariance matrix
-                points_prev_origin = drawn_points_prev - centroid_prev
-                points_cur_origin = drawn_points_cur - centroid_cur
-
-                xcov =  points_prev_origin @ points_cur_origin
-
-                #Utilize SVD
-                USV = np.linalg.svd(xcov)
-
-                #Compute Rotation Matrix
-                V_transpose = USV[2]
-                U = USV[0]
-
-                arr = np.array([
-                    [1,0,0],
-                    [0,1,0],
-                    [0,0,np.linalg.det(V_transpose.T) * np.linalg.det(U)]
-                ])
-
-                C_ba = U @ arr @ V_transpose #Vtrans.T @ arr @ U.T ??
-
-                #Compute Translation
-                translation = -C_ba @ (- C_ba.T @ centroid_cur.reshape(3,-1) + centroid_prev.reshape(3,-1))
-
-                #Form rigid body transform
-                T_ba = np.vstack((np.hstack((C_ba,translation)),np.array([0,0,0,1])))
-
-                #Apply transformation to whole point cloud
-                # breakpoint()
-                inlier_count = 0
-                inlier_points = []
-                inlier_ids = []
-                for (idx,point) in enumerate(cur_point_cloud):
-
-                    #Convert to homogeneous coordinates
-                    temp_point = point.reshape(3,-1)
-                    temp_point = np.vstack((temp_point,1))
-
-                    predicted_point = (T_ba @ temp_point)[:3].squeeze()
-                    actual_point = prev_point_cloud[idx].squeeze()
-
-                    eucl_dist = np.linalg.norm(predicted_point - actual_point)
-
-                    if eucl_dist < residual_threshold:
-                        inlier_points.append([actual_point,point.squeeze()])
-                        inlier_count+=1
-                        inlier_ids.append(idx)
-
-                if inlier_count > max_inlier_count:
-                    # print("better model found")
-                    max_inlier_count = inlier_count
-                    max_inlier_idx = iters
-                    max_inlier_points = inlier_points
-                    max_inlier_ids = inlier_ids
-
-                # breakpoint()
-                #Store transform
-                tested_models.append(T_ba)
-
-
-        T_ba_ransac = tested_models[max_inlier_idx]
         
         inlier_corrs = max_inlier_points #Inlier point correspondences [[prev,cur],...]
 
