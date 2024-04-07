@@ -128,21 +128,31 @@ class Controller():
 
         # Call a function in module `example_custom_utils`.
         ecu.exampleFunction()
+        waypoints = []
+        # # initial waypoint
+        # if use_firmware:
+        #     waypoints = [(self.initial_obs[0], self.initial_obs[2], initial_info["gate_dimensions"]["tall"]["height"])]  # Height is hardcoded scenario knowledge.
+        # else:
+        #     waypoints = [(self.initial_obs[0], self.initial_obs[2], self.initial_obs[4])]
 
-        # initial waypoint
-        if use_firmware:
-            waypoints = [(self.initial_obs[0], self.initial_obs[2], initial_info["gate_dimensions"]["tall"]["height"])]  # Height is hardcoded scenario knowledge.
-        else:
-            waypoints = [(self.initial_obs[0], self.initial_obs[2], self.initial_obs[4])]
+        # # Example code: hardcode waypoints 
+        # waypoints.append((-0.5, -3.0, 2.0))
+        # waypoints.append((-0.5, -2.0, 2.0))
+        # waypoints.append((-0.5, -1.0, 2.0))
+        # waypoints.append((-0.5,  0.0, 2.0))
+        # waypoints.append((-0.5,  1.0, 2.0))
+        # waypoints.append((-0.5,  2.0, 2.0))
+        # waypoints.append([initial_info["x_reference"][0], initial_info["x_reference"][2], initial_info["x_reference"][4]])
 
-        # Example code: hardcode waypoints 
-        waypoints.append((-0.5, -3.0, 2.0))
-        waypoints.append((-0.5, -2.0, 2.0))
-        waypoints.append((-0.5, -1.0, 2.0))
-        waypoints.append((-0.5,  0.0, 2.0))
-        waypoints.append((-0.5,  1.0, 2.0))
-        waypoints.append((-0.5,  2.0, 2.0))
-        waypoints.append([initial_info["x_reference"][0], initial_info["x_reference"][2], initial_info["x_reference"][4]])
+        print("The info. of the gates ")
+        print(self.NOMINAL_GATES)
+
+        for gate in self.NOMINAL_GATES:
+            waypoints.append([gate[0], gate[1], initial_info["gate_dimensions"]["tall"]["height"]])
+
+        #Reverse waypoints
+        waypoints = waypoints[::-1]
+        
 
         # Polynomial fit.
         self.waypoints = np.array(waypoints)
