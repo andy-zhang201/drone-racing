@@ -113,7 +113,7 @@ class Controller():
 
         ## visualization
         # Plot trajectory in each dimension and 3D.
-        plot_trajectory(t_scaled, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
+        # plot_trajectory(t_scaled, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
 
         # Draw the trajectory on PyBullet's GUI.
         draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
@@ -127,7 +127,14 @@ class Controller():
         ## generate waypoints for planning
 
         # Call a function in module `example_custom_utils`.
-        ecu.exampleFunction()
+        # ecu.exampleFunction()
+
+        print('Path plan start')
+        waypoints_x, waypoints_y = ecu.make_plan(-1.0,-3.0, -0.5, 1.5)
+        print('Path plan End')
+        print(f"node List : {[(x,y) for x,y in zip(waypoints_x, waypoints_y)]}")
+        print(f"start loc : {(self.initial_obs[0], self.initial_obs[2])}")
+
         waypoints = []
         # # initial waypoint
         # if use_firmware:
@@ -144,14 +151,14 @@ class Controller():
         # waypoints.append((-0.5,  2.0, 2.0))
         # waypoints.append([initial_info["x_reference"][0], initial_info["x_reference"][2], initial_info["x_reference"][4]])
 
-        print("The info. of the gates ")
-        print(self.NOMINAL_GATES)
+        height = initial_info["gate_dimensions"]["tall"]["height"]
+        for i in range(len(waypoints_x)):
+            waypoints.append([waypoints_x[i], waypoints_y[i], height])
 
-        for gate in self.NOMINAL_GATES:
-            waypoints.append([gate[0], gate[1], initial_info["gate_dimensions"]["tall"]["height"]])
+        # waypoints = [(self.initial_obs[0], self.initial_obs[2], initial_info["gate_dimensions"]["tall"]["height"])]
 
-        #Reverse waypoints
-        waypoints = waypoints[::-1]
+        # for gate in self.NOMINAL_GATES:
+        #     waypoints.append([gate[0], gate[1], initial_info["gate_dimensions"]["tall"]["height"]])
         
 
         # Polynomial fit.
@@ -216,13 +223,14 @@ class Controller():
 
         if iteration == 0:
             height = 1
-            duration = 2
+            duration = 5
 
             command_type = Command(2)  # Take-off.
             args = [height, duration]
 
         # [INSTRUCTIONS] Example code for using cmdFullState interface   
         elif iteration >= 3*self.CTRL_FREQ and iteration < 20*self.CTRL_FREQ:
+            print("cmdFullState")
             step = min(iteration-3*self.CTRL_FREQ, len(self.ref_x) -1)
             target_pos = np.array([self.ref_x[step], self.ref_y[step], self.ref_z[step]])
             target_vel = np.zeros(3)
@@ -233,45 +241,52 @@ class Controller():
             command_type = Command(1)  # cmdFullState.
             args = [target_pos, target_vel, target_acc, target_yaw, target_rpy_rates]
 
-        elif iteration == 20*self.CTRL_FREQ:
-            command_type = Command(6)  # Notify setpoint stop.
-            args = []
+    #     elif iteration == 20*self.CTRL_FREQ:
+    #         command_type = Command(6)  # Notify setpoint stop.
+    #         args = []
 
-       # [INSTRUCTIONS] Example code for using goTo interface 
-        elif iteration == 20*self.CTRL_FREQ+1:
-            x = self.ref_x[-1]
-            y = self.ref_y[-1]
+    #    # [INSTRUCTIONS] Example code for using goTo interface 
+    #     elif iteration == 20*self.CTRL_FREQ+1:
+    #         x = self.ref_x[-1]
+    #         y = self.ref_y[-1]
+    #         z = 1.5 
+    #         yaw = 0.
+    #         duration = 2.5
+
+    #         command_type = Command(5)  # goTo.
+    #         args = [[x, y, z], yaw, duration, False]
+
+    #     elif iteration == 23*self.CTRL_FREQ:
+    #         x = self.initial_obs[0]
+    #         y = self.initial_obs[2]
+    #         z = 1.5
+    #         yaw = 0.
+    #         duration = 6
+
+    #         command_type = Command(5)  # goTo.
+    #         args = [[x, y, z], yaw, duration, False]
+
+    #     elif iteration == 30*self.CTRL_FREQ:
+    #         height = 0.
+    #         duration = 3
+
+    #         command_type = Command(3)  # Land.
+    #         args = [height, duration]
+
+    #     elif iteration == 33*self.CTRL_FREQ-1:
+    #         command_type = Command(4)  # STOP command to be sent once the trajectory is completed.
+    #         args = []
+
+        else:
+            print(f'iteration: {iteration}')
+            x = self.ref_x[0]
+            y = self.ref_y[0]
             z = 1.5 
             yaw = 0.
             duration = 2.5
 
             command_type = Command(5)  # goTo.
             args = [[x, y, z], yaw, duration, False]
-
-        elif iteration == 23*self.CTRL_FREQ:
-            x = self.initial_obs[0]
-            y = self.initial_obs[2]
-            z = 1.5
-            yaw = 0.
-            duration = 6
-
-            command_type = Command(5)  # goTo.
-            args = [[x, y, z], yaw, duration, False]
-
-        elif iteration == 30*self.CTRL_FREQ:
-            height = 0.
-            duration = 3
-
-            command_type = Command(3)  # Land.
-            args = [height, duration]
-
-        elif iteration == 33*self.CTRL_FREQ-1:
-            command_type = Command(4)  # STOP command to be sent once the trajectory is completed.
-            args = []
-
-        else:
-            command_type = Command(0)  # None.
-            args = []
 
         #########################
         # REPLACE THIS (END) ####
