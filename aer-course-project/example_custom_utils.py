@@ -4,6 +4,8 @@ Please use a file like this one to add extra functions.
 
 """
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 ### PLANNER ###
 class RRTStarPlanner:
@@ -123,8 +125,8 @@ class RRTStarPlanner:
         self.nearestDist = 1000000
         # do sample
         newPoint = self.MakeSample(cur_iter)
-
-        if goal is not None:
+        print(goal)
+        if goal:
             newPoint = np.array([goal.pos_x, goal.pos_y])
         
         # find the nearest node in the tree
@@ -178,8 +180,6 @@ def FindDirection(starting_x, starting_y, ending_x, ending_y):
     start = np.array([starting_x, starting_y])
     end = np.array([ending_x, ending_y])
     d = end - start
-    print(f"Direction: {d}")
-    # breakpoint()
 
     return d / np.linalg.norm(d)
 
@@ -213,7 +213,7 @@ class SquareMap:
         y = np.random.uniform(self.bottomleft_y, self.topRight_y)
 
         #Every 10 iterations sample at goal.
-        if cur_iter % 10 == 0:
+        if cur_iter % 50 == 0:
             return np.array([self.topRight_x, self.topRight_y])
 
         return np.array([x, y])
@@ -227,12 +227,13 @@ class Obstacles:
         self.radius = radius
 
     def DetectLineCollision(self, starting_x, starting_y, ending_x, ending_y, tolerance):
-        print(f"Collide Check Starting: ({starting_x}, {starting_y}), Ending: ({ending_x}, {ending_y})")
+        # print(f"Collide Check Starting: ({starting_x}, {starting_y}), Ending: ({ending_x}, {ending_y})")
 
         if self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance):
             return True
         
         if starting_x == ending_x and starting_y == ending_y:
+            print("Invalid line segment!")
             return False
         
         n0 = FindDirection(starting_x, starting_y, ending_x, ending_y)
@@ -267,6 +268,31 @@ def GenerateCircles(obstacle, n=30):
     return x, y
 
 ### UAV CODE ###
+def visualize(planner):
+    fig, ax = plt.subplots()
+
+    # Plot start and goal nodes
+    ax.plot(planner.start_pos.pos_x, planner.start_pos.pos_y, 'ro')
+    ax.plot(planner.goal_pos.pos_x, planner.goal_pos.pos_y, 'bo')
+
+    # Plot edges of the tree
+    for node in planner.nodeList:
+        if node.parent is not None:
+            parent_node = planner.nodeList[node.parent]
+            ax.plot([node.pos_x, parent_node.pos_x], [node.pos_y, parent_node.pos_y], 'k-')
+
+    for obs in planner.obstacleList:
+        x, y = GenerateCircles(obs)
+        ax.plot(x, y, 'orange')
+
+    # Plot final path
+    res = planner.FormPath()
+    x = [planner.nodeList[nodeIdx].pos_x for nodeIdx in res]
+    y = [planner.nodeList[nodeIdx].pos_y for nodeIdx in res]
+    ax.plot(x, y, 'r-')
+    plt.axis('equal')
+    plt.show()
+
 
 def exampleFunction():
     """Example of user-defined function.
@@ -307,7 +333,7 @@ def add_start():
 def add_end():
     return [-0.5, 1.5]
 
-def make_plan(start_x=0.0,start_y=0.0,end_x=1.0,end_y=1.0): #Take in start point and endpoints. Endpoints need to pass through the gate.
+def make_plan(start_x=-1.0,start_y=-3.0,end_x=-0.5,end_y=1.5): #Take in start point and endpoints. Endpoints need to pass through the gate.
     #SHould this function be only called once?
     #It should be called every time you make a plan
     #Then it might be inefficient to reuse Longhao's code, because I will be creating new map each time.
@@ -331,23 +357,24 @@ def make_plan(start_x=0.0,start_y=0.0,end_x=1.0,end_y=1.0): #Take in start point
     start = TreeNode(start_x, start_y)
     goal = TreeNode(end_x, end_y)
     maxIters = 10000
-    step_size = 0.1
-    rewire_radius = 0.2
-    goal_tolerance = 0.1
+    step_size = 0.2
+    rewire_radius = 0.7
+    goal_tolerance = 1
     collision_tolerance = 0.1
 
     planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
-    # planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
+    planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
     # planner.AddObstacles(Obstacles(60, 35, 5))
 
     for _ in range(10000):
-        goal_coords= None
+        goal_coords=None
+
         if _ % 10 == 0:
             goal_coords = goal
         
-        print(f"Iteration: {_}")
-        if planner.UpdateOneStep(_, goal):
+        # print(f"Iteration: {_}")
+        if planner.UpdateOneStep(_, goal_coords):
             parentIdx = planner.nodeList[-1].parent
             x = [planner.nodeList[-1].pos_x, planner.nodeList[parentIdx].pos_x]
             y = [planner.nodeList[-1].pos_y, planner.nodeList[parentIdx].pos_y]
@@ -369,5 +396,7 @@ def make_plan(start_x=0.0,start_y=0.0,end_x=1.0,end_y=1.0): #Take in start point
     for nodeIdx in res:
         x.append(planner.nodeList[nodeIdx].pos_x)
         y.append(planner.nodeList[nodeIdx].pos_y)
+
+    visualize(planner)
 
     return x, y #return waypoints required to reach there. (limit to 10?)
