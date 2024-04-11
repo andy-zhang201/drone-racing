@@ -281,9 +281,15 @@ def visualize(planner):
             parent_node = planner.nodeList[node.parent]
             ax.plot([node.pos_x, parent_node.pos_x], [node.pos_y, parent_node.pos_y], 'k-')
 
+    idx = 0
     for obs in planner.obstacleList:
-        x, y = GenerateCircles(obs)
-        ax.plot(x, y, 'orange')
+        if planner.obstacleList[idx] == obs:
+            x, y = GenerateCircles(obs)
+            if idx > 3:
+                ax.plot(x, y, 'green',linewidth='2')
+            else:
+                ax.plot(x,y,'orange')
+            idx = idx+1
 
     # Plot final path
     res = planner.FormPath()
@@ -307,7 +313,6 @@ def make_map_bounds():
     return np.array([[-3.5,3.5],[-3.5,3.5]])
 
 def add_gates(): #Just as big circles for now
-    
     '''
           [ 0.5, -2.5, 0, 0, 0, -1.57, 0],      # gate 1
       [ 2.0, -1.5, 0, 0, 0, 0,     0],      # gate 2
@@ -333,70 +338,90 @@ def add_start():
 def add_end():
     return [-0.5, 1.5]
 
-def make_plan(start_x=-1.0,start_y=-3.0,end_x=-0.5,end_y=1.5): #Take in start point and endpoints. Endpoints need to pass through the gate.
-    #SHould this function be only called once?
-    #It should be called every time you make a plan
-    #Then it might be inefficient to reuse Longhao's code, because I will be creating new map each time.
-    ## Import Planner
-    ## import matplotlib.pyplot as plt
-    '''
-    What do I need? (numpy arrays)
-    - Boundary coordinates (np array)
-    - Obstacle coordinates + radii (np array)
-    - Gate coordinates (list of np array of obstacles)
-    - Start point (np array)
-    - End point (np array)
-    
-    What if I need more?
-    - Well then the code will break.
-    It should be fixable tho. Let's go ahead with this plan.
-    '''
+def make_plan(start_x,start_y,gate_coords):
     squareMap = SquareMap(-3.5, -3.5, 3.5, 3.5)
 
     # starting node
     start = TreeNode(start_x, start_y)
-    goal = TreeNode(end_x, end_y)
     maxIters = 10000
-    step_size = 0.2
-    rewire_radius = 0.7
+    step_size = 0.20
+    rewire_radius = 0.3
     goal_tolerance = 1
-    collision_tolerance = 0.1
+    collision_tolerance = 0.2
 
-    planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
+    x_total = list()
+    y_total = list()
 
-    planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
+
+    for gol in gate_coords:
+        goal = TreeNode(gol[0], gol[1])
+        planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
+
+    #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.06))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.06))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.06))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.06))
+
+    #gates
+        planner.AddObstacles(Obstacles(0.5,-2.1,0.06))
+        planner.AddObstacles(Obstacles(0.5,-2.9,0.06))
+        planner.AddObstacles(Obstacles(0.6,-2.1,0.06))
+        planner.AddObstacles(Obstacles(0.6,-2.9,0.06))
+
+        planner.AddObstacles(Obstacles(2.4,-1.5,0.06))
+        planner.AddObstacles(Obstacles(1.6,-1.5,0.06))
+        planner.AddObstacles(Obstacles(2.4,-1.6,0.06))
+        planner.AddObstacles(Obstacles(1.6,-1.6,0.06))
+
+
+        planner.AddObstacles(Obstacles(0.0,0.6,0.06))
+        planner.AddObstacles(Obstacles(0.0,-0.2,0.06))
+        planner.AddObstacles(Obstacles(0.1,0.6,0.06))
+        planner.AddObstacles(Obstacles(0.1,-0.2,0.06))
+
+        planner.AddObstacles(Obstacles(-0.1,1.5,0.06))
+        planner.AddObstacles(Obstacles(-0.9,1.5,0.06))
+
+
     # planner.AddObstacles(Obstacles(60, 35, 5))
 
-    for _ in range(10000):
-        goal_coords=None
+        for _ in range(10000):
+            goal_coords=None
 
-        if _ % 10 == 0:
-            goal_coords = goal
+            if _ % 10 == 0:
+                goal_coords = goal
         
         # print(f"Iteration: {_}")
-        if planner.UpdateOneStep(_, goal_coords):
-            parentIdx = planner.nodeList[-1].parent
-            x = [planner.nodeList[-1].pos_x, planner.nodeList[parentIdx].pos_x]
-            y = [planner.nodeList[-1].pos_y, planner.nodeList[parentIdx].pos_y]
+            if planner.UpdateOneStep(_, goal_coords):
+                parentIdx = planner.nodeList[-1].parent
+                x = [planner.nodeList[-1].pos_x, planner.nodeList[parentIdx].pos_x]
+                y = [planner.nodeList[-1].pos_y, planner.nodeList[parentIdx].pos_y]
             # ax.plot(x, y, color = 'b', linewidth=0.5)
             # fig.canvas.draw()
             # fig.canvas.flush_events()
             # plt.pause(0.05)
-            if planner.CheckGoal(planner.nodeList[-1]):
-                planner.pathFound = True
-                parentIdx = len(planner.nodeList) - 1
-                planner.nodeList.append(planner.goal_pos)
-                planner.nodeList[-1].parent = parentIdx
-                break
+                if planner.CheckGoal(planner.nodeList[-1]):
+                    planner.pathFound = True
+                    parentIdx = len(planner.nodeList) - 1
+                    planner.nodeList.append(planner.goal_pos)
+                    planner.nodeList[-1].parent = parentIdx
+                    break
 
-    print(f"Length of Nodes: {len(planner.nodeList)}")
-    res = planner.FormPath()
-    x = list()
-    y = list()
-    for nodeIdx in res:
-        x.append(planner.nodeList[nodeIdx].pos_x)
-        y.append(planner.nodeList[nodeIdx].pos_y)
+        print(f"Length of Nodes: {len(planner.nodeList)}")
+        res = planner.FormPath()
+        visualize(planner)
 
-    visualize(planner)
+        x = list()
+        y = list()
+        start = TreeNode(gol[0], gol[1])
+        for nodeIdx in res:
+            x.append(planner.nodeList[nodeIdx].pos_x)
+            y.append(planner.nodeList[nodeIdx].pos_y)
 
-    return x, y #return waypoints required to reach there. (limit to 10?)
+            x_total.append(planner.nodeList[nodeIdx].pos_x)
+            y_total.append(planner.nodeList[nodeIdx].pos_y)
+
+        
+
+    return x_total, y_total #return waypoints required to reach there. (limit to 10?)

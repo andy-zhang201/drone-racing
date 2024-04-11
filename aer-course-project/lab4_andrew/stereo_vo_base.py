@@ -154,7 +154,7 @@ class VisualOdometry:
         return T_ba
 
 
-    def ransac(self, pcl_prev, pcl_cur, num_iters=100, residual_threshold=5):
+    def ransac(self, pcl_prev, pcl_cur, num_iters=200, residual_threshold=5):
         max_inlier_count = 0
         max_inlier_idx = -1
         max_inlier_points =[]
@@ -325,6 +325,7 @@ class VisualOdometry:
         if len(inlier_corrs) < 3:
             print('Not enough points ICP.')
             return C, r, f_r_prev, f_r_cur
+        
         #Pose Estimation using ICP
         prev_points_inliers = np.vstack([pair[0] for pair in inlier_corrs])
         cur_points_inliers = np.vstack([pair[1] for pair in inlier_corrs])

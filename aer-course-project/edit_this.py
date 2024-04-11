@@ -121,49 +121,23 @@ class Controller():
 
     def planning(self, use_firmware, initial_info):
         """Trajectory planning algorithm"""
-        #########################
-        # REPLACE THIS (START) ##
-        #########################
-        ## generate waypoints for planning
-
-        # Call a function in module `example_custom_utils`.
-        # ecu.exampleFunction()
 
         print('Path plan start')
-        waypoints_x, waypoints_y = ecu.make_plan(-1.0,-3.0, -0.5, 1.5)
+        waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], self.NOMINAL_GATES)
         print('Path plan End')
         print(f"node List : {[(x,y) for x,y in zip(waypoints_x, waypoints_y)]}")
         print(f"start loc : {(self.initial_obs[0], self.initial_obs[2])}")
 
         waypoints = []
-        # # initial waypoint
-        # if use_firmware:
-        #     waypoints = [(self.initial_obs[0], self.initial_obs[2], initial_info["gate_dimensions"]["tall"]["height"])]  # Height is hardcoded scenario knowledge.
-        # else:
-        #     waypoints = [(self.initial_obs[0], self.initial_obs[2], self.initial_obs[4])]
-
-        # # Example code: hardcode waypoints 
-        # waypoints.append((-0.5, -3.0, 2.0))
-        # waypoints.append((-0.5, -2.0, 2.0))
-        # waypoints.append((-0.5, -1.0, 2.0))
-        # waypoints.append((-0.5,  0.0, 2.0))
-        # waypoints.append((-0.5,  1.0, 2.0))
-        # waypoints.append((-0.5,  2.0, 2.0))
-        # waypoints.append([initial_info["x_reference"][0], initial_info["x_reference"][2], initial_info["x_reference"][4]])
+        
 
         height = initial_info["gate_dimensions"]["tall"]["height"]
         for i in range(len(waypoints_x)):
             waypoints.append([waypoints_x[i], waypoints_y[i], height])
 
-        # waypoints = [(self.initial_obs[0], self.initial_obs[2], initial_info["gate_dimensions"]["tall"]["height"])]
 
-        # for gate in self.NOMINAL_GATES:
-        #     waypoints.append([gate[0], gate[1], initial_info["gate_dimensions"]["tall"]["height"]])
-        
-
-        # Polynomial fit.
         self.waypoints = np.array(waypoints)
-        deg = 6
+        deg = 10
         t = np.arange(self.waypoints.shape[0])
         fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
         fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
