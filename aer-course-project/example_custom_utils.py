@@ -279,7 +279,7 @@ def visualize(planner):
     for node in planner.nodeList:
         if node.parent is not None:
             parent_node = planner.nodeList[node.parent]
-            ax.plot([node.pos_x, parent_node.pos_x], [node.pos_y, parent_node.pos_y], 'k-')
+            ax.plot([node.pos_x, parent_node.pos_x], [node.pos_y, parent_node.pos_y], 'k-',linewidth = 1)
 
     idx = 0
     for obs in planner.obstacleList:
@@ -344,13 +344,16 @@ def make_plan(start_x,start_y,gate_coords):
     # starting node
     start = TreeNode(start_x, start_y)
     maxIters = 10000
-    step_size = 0.20
-    rewire_radius = 0.3
-    goal_tolerance = 1
-    collision_tolerance = 0.2
+    step_size = 0.65
+    rewire_radius = 0.55
+    goal_tolerance = 0.8
+    collision_tolerance = 0.1
 
     x_total = list()
     y_total = list()
+
+    #gate_coords = gate_coords[::-1]
+    #print(gate_coords)
 
 
     for gol in gate_coords:
@@ -364,24 +367,34 @@ def make_plan(start_x,start_y,gate_coords):
         planner.AddObstacles(Obstacles(-1.0, 0.0, 0.06))
 
     #gates
-        planner.AddObstacles(Obstacles(0.5,-2.1,0.06))
-        planner.AddObstacles(Obstacles(0.5,-2.9,0.06))
-        planner.AddObstacles(Obstacles(0.6,-2.1,0.06))
-        planner.AddObstacles(Obstacles(0.6,-2.9,0.06))
+        planner.AddObstacles(Obstacles(0.4,-2.3,0.06))
+        planner.AddObstacles(Obstacles(0.4,-2.7,0.06))
+        planner.AddObstacles(Obstacles(0.5,-2.3,0.06))
+        planner.AddObstacles(Obstacles(0.5,-2.7,0.06))
+        planner.AddObstacles(Obstacles(0.6,-2.3,0.06))
+        planner.AddObstacles(Obstacles(0.6,-2.7,0.06))
+        
+        planner.AddObstacles(Obstacles(2.2,-1.4,0.06))
+        planner.AddObstacles(Obstacles(1.8,-1.4,0.06))
+        planner.AddObstacles(Obstacles(2.2,-1.5,0.06))
+        planner.AddObstacles(Obstacles(1.8,-1.5,0.06))
+        planner.AddObstacles(Obstacles(2.2,-1.6,0.06))
+        planner.AddObstacles(Obstacles(1.8,-1.6,0.06))
 
-        planner.AddObstacles(Obstacles(2.4,-1.5,0.06))
-        planner.AddObstacles(Obstacles(1.6,-1.5,0.06))
-        planner.AddObstacles(Obstacles(2.4,-1.6,0.06))
-        planner.AddObstacles(Obstacles(1.6,-1.6,0.06))
 
+        planner.AddObstacles(Obstacles(-0.1,0.4,0.06))
+        planner.AddObstacles(Obstacles(-0.1,0.0,0.06))
+        planner.AddObstacles(Obstacles(0.0,0.4,0.06))
+        planner.AddObstacles(Obstacles(0.0,0.0,0.06))
+        planner.AddObstacles(Obstacles(0.1,0.4,0.06))
+        planner.AddObstacles(Obstacles(0.1,0.0,0.06))
 
-        planner.AddObstacles(Obstacles(0.0,0.6,0.06))
-        planner.AddObstacles(Obstacles(0.0,-0.2,0.06))
-        planner.AddObstacles(Obstacles(0.1,0.6,0.06))
-        planner.AddObstacles(Obstacles(0.1,-0.2,0.06))
-
-        planner.AddObstacles(Obstacles(-0.1,1.5,0.06))
-        planner.AddObstacles(Obstacles(-0.9,1.5,0.06))
+        planner.AddObstacles(Obstacles(-0.3,1.4,0.06))
+        planner.AddObstacles(Obstacles(-0.7,1.4,0.06))
+        planner.AddObstacles(Obstacles(-0.3,1.5,0.06))
+        planner.AddObstacles(Obstacles(-0.7,1.5,0.06))
+        planner.AddObstacles(Obstacles(-0.3,1.6,0.06))
+        planner.AddObstacles(Obstacles(-0.7,1.6,0.06))
 
 
     # planner.AddObstacles(Obstacles(60, 35, 5))

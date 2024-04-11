@@ -137,7 +137,7 @@ class Controller():
 
 
         self.waypoints = np.array(waypoints)
-        deg = 10
+        deg = 9
         t = np.arange(self.waypoints.shape[0])
         fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
         fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
@@ -197,7 +197,7 @@ class Controller():
 
         if iteration == 0:
             height = 1
-            duration = 5
+            duration = 2
 
             command_type = Command(2)  # Take-off.
             args = [height, duration]
@@ -215,52 +215,46 @@ class Controller():
             command_type = Command(1)  # cmdFullState.
             args = [target_pos, target_vel, target_acc, target_yaw, target_rpy_rates]
 
-    #     elif iteration == 20*self.CTRL_FREQ:
-    #         command_type = Command(6)  # Notify setpoint stop.
-    #         args = []
+        elif iteration == 20*self.CTRL_FREQ:
+            command_type = Command(6)  # Notify setpoint stop.
+            args = []
 
-    #    # [INSTRUCTIONS] Example code for using goTo interface 
-    #     elif iteration == 20*self.CTRL_FREQ+1:
-    #         x = self.ref_x[-1]
-    #         y = self.ref_y[-1]
-    #         z = 1.5 
-    #         yaw = 0.
-    #         duration = 2.5
-
-    #         command_type = Command(5)  # goTo.
-    #         args = [[x, y, z], yaw, duration, False]
-
-    #     elif iteration == 23*self.CTRL_FREQ:
-    #         x = self.initial_obs[0]
-    #         y = self.initial_obs[2]
-    #         z = 1.5
-    #         yaw = 0.
-    #         duration = 6
-
-    #         command_type = Command(5)  # goTo.
-    #         args = [[x, y, z], yaw, duration, False]
-
-    #     elif iteration == 30*self.CTRL_FREQ:
-    #         height = 0.
-    #         duration = 3
-
-    #         command_type = Command(3)  # Land.
-    #         args = [height, duration]
-
-    #     elif iteration == 33*self.CTRL_FREQ-1:
-    #         command_type = Command(4)  # STOP command to be sent once the trajectory is completed.
-    #         args = []
-
-        else:
-            print(f'iteration: {iteration}')
-            x = self.ref_x[0]
-            y = self.ref_y[0]
+        # [INSTRUCTIONS] Example code for using goTo interface 
+        elif iteration == 20*self.CTRL_FREQ+1:
+            x = self.ref_x[-1]
+            y = self.ref_y[-1]
             z = 1.5 
             yaw = 0.
             duration = 2.5
 
             command_type = Command(5)  # goTo.
             args = [[x, y, z], yaw, duration, False]
+
+        elif iteration == 23*self.CTRL_FREQ:
+            x = self.initial_obs[0]
+            y = self.initial_obs[2]
+            z = 1.5
+            yaw = 0.
+            duration = 6
+
+            command_type = Command(5)  # goTo.
+            args = [[x, y, z], yaw, duration, False]
+
+        elif iteration == 30*self.CTRL_FREQ:
+            height = 0.
+            duration = 3
+
+            command_type = Command(3)  # Land.
+            args = [height, duration]
+
+        elif iteration == 33*self.CTRL_FREQ-1:
+            command_type = Command(4)  # STOP command to be sent once the trajectory is completed.
+            args = []
+
+        else:
+            command_type = Command(0)
+            args =[]
+
 
         #########################
         # REPLACE THIS (END) ####
