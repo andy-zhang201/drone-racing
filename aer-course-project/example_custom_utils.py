@@ -41,15 +41,30 @@ class RRTStarPlanner:
         self.nodeList.append(TreeNode(pos_x, pos_y, parent, cost))
 
     def GetSteerCoorindate(self, nodeIdx, point):
-        if self.nodeList[nodeIdx].pos_x == -0.9889568473925153:
-            pass
-            # breakpoint()
         
         offset = self.stepSize * FindDirection(self.nodeList[nodeIdx].pos_x, self.nodeList[nodeIdx].pos_y, point[0], point[1])
         return np.array([self.nodeList[nodeIdx].pos_x + offset[0], self.nodeList[nodeIdx].pos_y + offset[1]])
 
-    def MakeSample(self, cur_iter):
-        return self.aera_map.MakeSample(cur_iter)
+    def MakeSample(self):
+        return self.aera_map.MakeSample()
+    
+    def MakeSampleSubArea(self):
+        buffer = 0.2
+
+        # Determine the minimum and maximum x values, accounting for the buffer
+        x_min = min(self.start_pos.pos_x, self.goal_pos.pos_x) - buffer
+        x_max = max(self.start_pos.pos_x, self.goal_pos.pos_x) + buffer
+
+        # Determine the minimum and maximum y values, accounting for the buffer
+        y_min = min(self.start_pos.pos_y, self.goal_pos.pos_y) - buffer
+        y_max = max(self.start_pos.pos_y, self.goal_pos.pos_y) + buffer
+
+        # Sample uniformly within the ranges
+        x_sample = np.random.uniform(x_min, x_max)
+        y_sample = np.random.uniform(y_min, y_max)
+
+        return np.array([x_sample, y_sample])
+
 
     def CheckGoal(self, currNode):
         return currNode.GetDistanceNode(self.goal_pos) < self.goalTolerance
@@ -69,10 +84,21 @@ class RRTStarPlanner:
 
     def CheckCollision(self, currPoint, node):
         # check obstacle
+        # breakpoint()
+        # This if statement NEVER triggers. Could goal never be checked for collision?
+
+        # if self.CheckGoal(node) or ((abs(currPoint[0] - self.goal_pos.pos_x) < 0.8) and (abs(currPoint[1] - self.goal_pos.pos_y) < 0.8)):
+            # print(f"Checking collision with Goal: ({node.pos_x}, {node.pos_y})")
+            # print(f"Other point: ({currPoint[0]}, {currPoint[1]})")
+            # print("=====================================")
+            # print(f"Goal point: ({self.goal_pos.pos_x}, {self.goal_pos.pos_y})")
+            # breakpoint()
+    
         for ob in self.obstacleList:
             # self.collisionTolerance
             if ob.DetectLineCollision(currPoint[0], currPoint[1], node.pos_x, node.pos_y, self.collisionTolerance):
                 return False
+            
         return True
 
     def FormPath(self):
@@ -120,12 +146,14 @@ class RRTStarPlanner:
         return newParent, currentCost
 
 
-    def UpdateOneStep(self, cur_iter, goal):
+    def UpdateOneStep(self, goal):
         # reset nearest value
         self.nearestDist = 1000000
-        # do sample
-        newPoint = self.MakeSample(cur_iter)
-        print(goal)
+        # do sample in subarea around goal and start
+
+
+        newPoint = self.MakeSampleSubArea()
+
         if goal:
             newPoint = np.array([goal.pos_x, goal.pos_y])
         
@@ -133,7 +161,7 @@ class RRTStarPlanner:
         self.minDist = float('inf')
         self.nearestNodeIdx = -1
         self.FindNearest(0, newPoint)
-        print(f"Nearest Node: ({self.nodeList[self.nearestNodeIdx].pos_x}, {self.nodeList[self.nearestNodeIdx].pos_y})")
+        # print(f"Nearest Node: ({self.nodeList[self.nearestNodeIdx].pos_x}, {self.nodeList[self.nearestNodeIdx].pos_y})")
         if self.nearestNodeIdx == -1:
             print("can not find nearest point!")
             return
@@ -142,7 +170,6 @@ class RRTStarPlanner:
         # check obstacle
         
         if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]):
-            # breakpoint()
             return False
 
         # get neighbors
@@ -208,13 +235,9 @@ class SquareMap:
         self.topRight_x = topRight_x
         self.topRight_y = topRight_y
 
-    def MakeSample(self, cur_iter):
+    def MakeSample(self):
         x = np.random.uniform(self.bottomleft_x, self.topRight_x)
         y = np.random.uniform(self.bottomleft_y, self.topRight_y)
-
-        #Every 10 iterations sample at goal.
-        if cur_iter % 50 == 0:
-            return np.array([self.topRight_x, self.topRight_y])
 
         return np.array([x, y])
 
@@ -227,14 +250,14 @@ class Obstacles:
         self.radius = radius
 
     def DetectLineCollision(self, starting_x, starting_y, ending_x, ending_y, tolerance):
-        # print(f"Collide Check Starting: ({starting_x}, {starting_y}), Ending: ({ending_x}, {ending_y})")
+        # # print(f"Collide Check Starting: ({starting_x}, {starting_y}), Ending: ({ending_x}, {ending_y})")
 
-        if self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance):
-            return True
+        # if self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance):
+        #     return True
         
-        if starting_x == ending_x and starting_y == ending_y:
-            print("Invalid line segment!")
-            return False
+        # if starting_x == ending_x and starting_y == ending_y:
+        #     print("Invalid line segment!")
+        #     return True
         
         n0 = FindDirection(starting_x, starting_y, ending_x, ending_y)
         l = np.sqrt((starting_x - starting_y)**2 + (ending_x - ending_y)**2)
@@ -314,11 +337,11 @@ def make_map_bounds():
 
 def add_gates(): #Just as big circles for now
     '''
-          [ 0.5, -2.5, 0, 0, 0, -1.57, 0],      # gate 1
+      [ 0.5, -2.5, 0, 0, 0, -1.57, 0],      # gate 1
       [ 2.0, -1.5, 0, 0, 0, 0,     0],      # gate 2
       [ 0.0,  0.2, 0, 0, 0, 1.57,  0],      # gate 3
       [-0.5,  1.5, 0, 0, 0, 0,     0]       # gate 4
-      '''
+    '''
 
     gate1 = np.array([0.5, -2.5,0.5])
     gate2 = np.array([2.0, -1.5,0.5])
@@ -344,9 +367,9 @@ def make_plan(start_x,start_y,gate_coords):
     # starting node
     start = TreeNode(start_x, start_y)
     maxIters = 10000
-    step_size = 0.65
-    rewire_radius = 0.55
-    goal_tolerance = 0.8
+    step_size = 0.2
+    rewire_radius = 0.7
+    goal_tolerance = 0.1
     collision_tolerance = 0.1
 
     x_total = list()
@@ -381,7 +404,6 @@ def make_plan(start_x,start_y,gate_coords):
         planner.AddObstacles(Obstacles(2.2,-1.6,0.06))
         planner.AddObstacles(Obstacles(1.8,-1.6,0.06))
 
-
         planner.AddObstacles(Obstacles(-0.1,0.4,0.06))
         planner.AddObstacles(Obstacles(-0.1,0.0,0.06))
         planner.AddObstacles(Obstacles(0.0,0.4,0.06))
@@ -399,21 +421,18 @@ def make_plan(start_x,start_y,gate_coords):
 
     # planner.AddObstacles(Obstacles(60, 35, 5))
 
-        for _ in range(10000):
-            goal_coords=None
+        for _ in range(maxIters):
+            goal_coords_sampling=None
 
             if _ % 10 == 0:
-                goal_coords = goal
+                goal_coords_sampling = goal
         
         # print(f"Iteration: {_}")
-            if planner.UpdateOneStep(_, goal_coords):
+            if planner.UpdateOneStep(goal_coords_sampling):
                 parentIdx = planner.nodeList[-1].parent
                 x = [planner.nodeList[-1].pos_x, planner.nodeList[parentIdx].pos_x]
                 y = [planner.nodeList[-1].pos_y, planner.nodeList[parentIdx].pos_y]
-            # ax.plot(x, y, color = 'b', linewidth=0.5)
-            # fig.canvas.draw()
-            # fig.canvas.flush_events()
-            # plt.pause(0.05)
+
                 if planner.CheckGoal(planner.nodeList[-1]):
                     planner.pathFound = True
                     parentIdx = len(planner.nodeList) - 1
@@ -421,20 +440,104 @@ def make_plan(start_x,start_y,gate_coords):
                     planner.nodeList[-1].parent = parentIdx
                     break
 
-        print(f"Length of Nodes: {len(planner.nodeList)}")
+        # print(f"Length of Nodes: {len(planner.nodeList)}")
         res = planner.FormPath()
-        visualize(planner)
+        # visualize(planner)
+   
 
-        x = list()
-        y = list()
+        #Update Start Location
+        old_start = start
         start = TreeNode(gol[0], gol[1])
+
+        #Append waypoints
+        x_sub = list()
+        y_sub = list()
         for nodeIdx in res:
-            x.append(planner.nodeList[nodeIdx].pos_x)
-            y.append(planner.nodeList[nodeIdx].pos_y)
-
-            x_total.append(planner.nodeList[nodeIdx].pos_x)
-            y_total.append(planner.nodeList[nodeIdx].pos_y)
-
+            x_sub.append(planner.nodeList[nodeIdx].pos_x)
+            y_sub.append(planner.nodeList[nodeIdx].pos_y)
         
+
+        #Add extra waypoints in front and behind gate to ensure traj doesn't hit gate
+        """
+        Need:
+        1. Direction of gate (found using gol[-2])
+        2. Location of start (start) and end (gol [0], gol[1])
+        3. Buffer distance
+        
+        """
+
+        buffer_distance = 0.25
+        direction = gol[-2]
+        beginning = np.array([old_start.pos_x, old_start.pos_y])
+        ending = np.array([gol[0], gol[1]])
+        
+
+        #new waypoints:
+        if (direction == 0):
+            if (gol[1] > beginning[1]):
+                x_front = gol[0] 
+                y_front = gol[1] - buffer_distance
+                x_back = gol[0] 
+                y_back = gol[1] + buffer_distance
+            else:
+                x_front = gol[0] 
+                y_front = gol[1] + buffer_distance
+                x_back = gol[0] 
+                y_back = gol[1] - buffer_distance
+
+            #delete any waypoints which come in between the back and front waypoints
+            idx = 0
+            while idx < len(x_sub):
+                if (y_sub[idx] > min(y_front,y_back)) and (y_sub[idx] < max(y_front,y_back)):
+                    del x_sub[idx]
+                    del y_sub[idx]
+
+                else:
+                    idx += 1               
+
+        elif((direction == -1.57) or (direction == 1.57)):
+            if (gol[0] > beginning[0]):
+                x_front = gol[0] - buffer_distance
+                y_front = gol[1]
+                x_back = gol[0] + buffer_distance
+                y_back = gol[1]
+            else:
+                x_front = gol[0] + buffer_distance
+                y_front = gol[1]
+                x_back = gol[0] - buffer_distance
+                y_back = gol[1]
+            
+            #delete any waypoints which come in between the back and front waypoints
+            idx = 0
+            while idx < len(x_sub):
+                x = x_sub[idx]
+                if (x > min(x_front, x_back)) and (x < max(x_front, x_back)):
+                    del x_sub[idx]
+                    del y_sub[idx]
+
+                else:
+                    idx += 1
+
+
+        else:
+            pass
+
+        # insert waypoints into second to last element of x_sub and y_sub
+        x_sub.insert(-1,x_front)
+        y_sub.insert(-1,y_front)
+        x_sub.append(x_back)
+        y_sub.append(y_back)
+
+        #Concatenate lists
+        x_total = x_total + x_sub
+        y_total = y_total + y_sub
+        
+        
+        #Set next start to the farthest additional waypoint
+        start = TreeNode(x_back, y_back)
+
+        # # Add flag to signal end of subproblem
+        # x_total.append(-1000)
+        # y_total.append(-1000)
 
     return x_total, y_total #return waypoints required to reach there. (limit to 10?)

@@ -122,22 +122,25 @@ class Controller():
     def planning(self, use_firmware, initial_info):
         """Trajectory planning algorithm"""
 
-        print('Path plan start')
         waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], self.NOMINAL_GATES)
-        print('Path plan End')
-        print(f"node List : {[(x,y) for x,y in zip(waypoints_x, waypoints_y)]}")
-        print(f"start loc : {(self.initial_obs[0], self.initial_obs[2])}")
 
         waypoints = []
         
-
         height = initial_info["gate_dimensions"]["tall"]["height"]
         for i in range(len(waypoints_x)):
-            waypoints.append([waypoints_x[i], waypoints_y[i], height])
+            if (waypoints_x[i] > -1000) & (waypoints_y[i] > -1000):
+                waypoints.append([waypoints_x[i], waypoints_y[i], height])
 
-
+        # How to trajectory plan better:
+        """
+        1. split waypoints list into 4 subproblems
+        2. for each sublist, create variables t, fx, fy, fz using np.arange and poly1d.
+        3. Set a duration of flight for each sublist.
+        4. Concatenate all t sublists into a signle one for t_scaled
+        5. Concatenate all sub self.ref_x = fx, self.ref_y = fy, self.ref_z = fz
+        """
         self.waypoints = np.array(waypoints)
-        deg = 9
+        deg = 7
         t = np.arange(self.waypoints.shape[0])
         fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
         fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
@@ -204,7 +207,6 @@ class Controller():
 
         # [INSTRUCTIONS] Example code for using cmdFullState interface   
         elif iteration >= 3*self.CTRL_FREQ and iteration < 20*self.CTRL_FREQ:
-            print("cmdFullState")
             step = min(iteration-3*self.CTRL_FREQ, len(self.ref_x) -1)
             target_pos = np.array([self.ref_x[step], self.ref_y[step], self.ref_z[step]])
             target_vel = np.zeros(3)
