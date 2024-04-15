@@ -122,7 +122,16 @@ class Controller():
     def planning(self, use_firmware, initial_info):
         """Trajectory planning algorithm"""
 
-        waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], self.NOMINAL_GATES)
+        # Gate Coords Order
+        gate1 = self.NOMINAL_GATES[0]
+        gate2 = self.NOMINAL_GATES[1]
+        gate3 = self.NOMINAL_GATES[2]
+        gate4 = self.NOMINAL_GATES[3]
+
+        ### INPUT ORDER OF GATES HERE ###
+        gates_ordered = [gate4,gate3,gate2,gate1]
+
+        waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
 
         waypoints = []
         
@@ -140,7 +149,7 @@ class Controller():
         5. Concatenate all sub self.ref_x = fx, self.ref_y = fy, self.ref_z = fz
         """
         self.waypoints = np.array(waypoints)
-        deg = 7
+        deg = 10
         t = np.arange(self.waypoints.shape[0])
         fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
         fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
@@ -150,6 +159,9 @@ class Controller():
         self.ref_x = fx(t_scaled)
         self.ref_y = fy(t_scaled)
         self.ref_z = fz(t_scaled)
+        # self.ref_x = self.waypoints[:,0]
+        # self.ref_y = self.waypoints[:,1]
+        # self.ref_z = self.waypoints[:,2]
 
         #########################
         # REPLACE THIS (END) ####

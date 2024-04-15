@@ -185,7 +185,7 @@ class RRTStarPlanner:
     def Calculate(self):
         # iterate until whether the maximum itr reached
         for _ in range(self.maxItrs):
-            self.UpdateOneStep(_,False)
+            self.UpdateOneStep(False)
             if self.CheckGoal(self.nodeList[-1]):
                 parentIdx = len(self.nodeList) - 1
                 self.pathFound = True
@@ -252,12 +252,12 @@ class Obstacles:
     def DetectLineCollision(self, starting_x, starting_y, ending_x, ending_y, tolerance):
         # # print(f"Collide Check Starting: ({starting_x}, {starting_y}), Ending: ({ending_x}, {ending_y})")
 
-        # if self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance):
-        #     return True
+        if self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance):
+            return True
         
-        # if starting_x == ending_x and starting_y == ending_y:
-        #     print("Invalid line segment!")
-        #     return True
+        if starting_x == ending_x and starting_y == ending_y:
+            print("Invalid line segment!")
+            return True
         
         n0 = FindDirection(starting_x, starting_y, ending_x, ending_y)
         l = np.sqrt((starting_x - starting_y)**2 + (ending_x - ending_y)**2)
@@ -368,16 +368,12 @@ def make_plan(start_x,start_y,gate_coords):
     start = TreeNode(start_x, start_y)
     maxIters = 10000
     step_size = 0.2
-    rewire_radius = 0.7
+    rewire_radius = 0.5
     goal_tolerance = 0.1
     collision_tolerance = 0.1
 
     x_total = list()
     y_total = list()
-
-    #gate_coords = gate_coords[::-1]
-    #print(gate_coords)
-
 
     for gol in gate_coords:
         goal = TreeNode(gol[0], gol[1])
@@ -442,7 +438,7 @@ def make_plan(start_x,start_y,gate_coords):
 
         # print(f"Length of Nodes: {len(planner.nodeList)}")
         res = planner.FormPath()
-        # visualize(planner)
+        visualize(planner)
    
 
         #Update Start Location
@@ -472,7 +468,7 @@ def make_plan(start_x,start_y,gate_coords):
         ending = np.array([gol[0], gol[1]])
         
 
-        #new waypoints:
+        # If goal is facing north/south
         if (direction == 0):
             if (gol[1] > beginning[1]):
                 x_front = gol[0] 
@@ -495,6 +491,7 @@ def make_plan(start_x,start_y,gate_coords):
                 else:
                     idx += 1               
 
+        #If goal is facing east/west
         elif((direction == -1.57) or (direction == 1.57)):
             if (gol[0] > beginning[0]):
                 x_front = gol[0] - buffer_distance
@@ -523,16 +520,20 @@ def make_plan(start_x,start_y,gate_coords):
             pass
 
         # insert waypoints into second to last element of x_sub and y_sub
-        x_sub.insert(-1,x_front)
-        y_sub.insert(-1,y_front)
+        x_sub.append(x_front)
+        y_sub.append(y_front)
+
+        #Reinsert goal waypoints
+        x_sub.append(gol[0])
+        y_sub.append(gol[1])
+
+        # Insert back waypoints
         x_sub.append(x_back)
         y_sub.append(y_back)
 
         #Concatenate lists
         x_total = x_total + x_sub
         y_total = y_total + y_sub
-        
-        
         #Set next start to the farthest additional waypoint
         start = TreeNode(x_back, y_back)
 
