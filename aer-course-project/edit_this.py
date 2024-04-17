@@ -129,7 +129,7 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate4,gate3,gate2,gate1]
+        gates_ordered = [gate2,gate4,gate1,gate3]
 
         waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
 
@@ -149,13 +149,16 @@ class Controller():
         5. Concatenate all sub self.ref_x = fx, self.ref_y = fy, self.ref_z = fz
         """
         self.waypoints = np.array(waypoints)
-        deg = 10
+        deg = 15
         t = np.arange(self.waypoints.shape[0])
         fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
         fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
         fz = np.poly1d(np.polyfit(t, self.waypoints[:,2], deg))
-        duration = 15
+        duration = 10
         t_scaled = np.linspace(t[0], t[-1], int(duration*self.CTRL_FREQ))
+        #print(t_scaled)
+        print("This is fx:")
+        print(fx(t_scaled))
         self.ref_x = fx(t_scaled)
         self.ref_y = fy(t_scaled)
         self.ref_z = fz(t_scaled)
