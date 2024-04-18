@@ -116,7 +116,7 @@ class Controller():
         # plot_trajectory(t_scaled, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
 
         # Draw the trajectory on PyBullet's GUI.
-        draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
+        # draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
 
 
     def planning(self, use_firmware, initial_info):
@@ -129,16 +129,18 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate2,gate4,gate1,gate3]
+        gates_ordered = [gate1,gate2,gate3,gate4]
 
-        waypoints_x, waypoints_y = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
+        waypoints_x, waypoints_y, splits = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
+        splits.insert(0,0)
 
         waypoints = []
-        
+        # breakpoint()
         height = initial_info["gate_dimensions"]["tall"]["height"]
         for i in range(len(waypoints_x)):
             if (waypoints_x[i] > -1000) & (waypoints_y[i] > -1000):
                 waypoints.append([waypoints_x[i], waypoints_y[i], height])
+            
 
         # How to trajectory plan better:
         """
@@ -148,23 +150,74 @@ class Controller():
         4. Concatenate all t sublists into a signle one for t_scaled
         5. Concatenate all sub self.ref_x = fx, self.ref_y = fy, self.ref_z = fz
         """
+        print(f"Waypoints: {waypoints}")
+        print(f"Waypoints length: {len(waypoints)}")
+
         self.waypoints = np.array(waypoints)
-        deg = 15
+        self.ref_x = np.array([])
+        self.ref_y = np.array([])
+        self.ref_z = np.array([])
         t = np.arange(self.waypoints.shape[0])
-        fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
-        fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
-        fz = np.poly1d(np.polyfit(t, self.waypoints[:,2], deg))
-        duration = 10
-        t_scaled = np.linspace(t[0], t[-1], int(duration*self.CTRL_FREQ))
-        #print(t_scaled)
-        print("This is fx:")
-        print(fx(t_scaled))
-        self.ref_x = fx(t_scaled)
-        self.ref_y = fy(t_scaled)
-        self.ref_z = fz(t_scaled)
+        duration = 15
+        t_scaled=[]
+        
+
+        for idx in splits[:-1]:
+            print(f"Split at {idx}")
+            temp_waypoints = np.array(waypoints[idx:splits[splits.index(idx)+1]-1])
+
+            if idx == splits[-2]:
+                print('Last split')
+                temp_waypoints = np.array(waypoints[idx:])
+
+            deg = int(len(temp_waypoints)/2)
+            t_temp = np.arange(temp_waypoints.shape[0])
+            temp_fx = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,0], deg))
+            temp_fy = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,1], deg))
+            temp_fz = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,2], deg))
+
+            temp_duration = duration*len(temp_waypoints)/len(waypoints)
+
+            t_scaled_temp = np.linspace(t_temp[0], t_temp[-1], int(temp_duration*self.CTRL_FREQ))
+
+            self.ref_x = np.concatenate((self.ref_x, temp_fx(t_scaled_temp)))
+            self.ref_y = np.concatenate((self.ref_y, temp_fy(t_scaled_temp)))
+            self.ref_z = np.concatenate((self.ref_z, temp_fz(t_scaled_temp)))
+            t_scaled.append(t_scaled_temp)
+
+
+            # self.ref_x
+        # Append last waypoint
+        self.ref_x = np.concatenate((self.ref_x, [waypoints[-1][0]]))
+        self.ref_y = np.concatenate((self.ref_y, [waypoints[-1][1]]))
+        self.ref_z = np.concatenate((self.ref_z, [waypoints[-1][2]]))
+        t_scaled_temp = np.linspace(t_scaled[-1], t_scaled[-1] + 2, int(2*self.CTRL_FREQ))
+        t_scaled.append(t_scaled_temp)
+
+        # deg = len(self.waypoints) - 18
+        # t = np.arange(self.waypoints.shape[0])
+        # fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
+        # fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
+        # fz = np.poly1d(np.polyfit(t, self.waypoints[:,2], deg))
+        # duration = 13
+        # print(f'T: {len(t)}')
+        # t_s1 = np.linspace(t[0], t[10], int(duration*self.CTRL_FREQ))
+        # t_s2 = np.linspace(t[10], t[-1], int(duration*self.CTRL_FREQ*2))
+        # # t_scaled = np.linspace(t[0], t[-1], int(duration*self.CTRL_FREQ))
+        # t_scaled = np.concatenate((t_s1, t_s2))
+        # #print(t_scaled)
+        # print("This is fx:")
+        # print(fx(t_scaled))
+
+        # self.ref_x = fx(t_scaled)
+        # self.ref_y = fy(t_scaled)
+        # self.ref_z = fz(t_scaled)
+
         # self.ref_x = self.waypoints[:,0]
         # self.ref_y = self.waypoints[:,1]
         # self.ref_z = self.waypoints[:,2]
+
+
 
         #########################
         # REPLACE THIS (END) ####
