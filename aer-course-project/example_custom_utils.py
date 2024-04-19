@@ -70,16 +70,27 @@ class RRTStarPlanner:
         return currNode.GetDistanceNode(self.goal_pos) < self.goalTolerance
 
     def FindNearest(self, rootIdx, point):
-        if rootIdx < 0 or rootIdx >= len(self.nodeList):
-            return
+        # find the nearest node in the tree
+        minDist = 1000000
 
-        dist = self.nodeList[rootIdx].GetDistancePoint(point[0], point[1])
-        if dist < self.minDist:
-            self.nearestNodeIdx = rootIdx
-            self.minDist = dist
+        for node in self.nodeList:
+            dist = node.GetDistancePoint(point[0], point[1])
+            if dist < minDist:
+                self.nearestNodeIdx = self.nodeList.index(node)
+                minDist = dist
+        
+        return
+        ### Old: Recursive Implementation
+        # if rootIdx < 0 or rootIdx >= len(self.nodeList):
+        #     return
 
-        for child in self.nodeList[rootIdx].children:
-            self.FindNearest(child, point)
+        # dist = self.nodeList[rootIdx].GetDistancePoint(point[0], point[1])
+        # if dist < self.minDist:
+        #     self.nearestNodeIdx = rootIdx
+        #     self.minDist = dist
+
+        # for child in self.nodeList[rootIdx].children:
+        #     self.FindNearest(child, point)
 
 
     def CheckCollision(self, currPoint, node):
@@ -161,15 +172,18 @@ class RRTStarPlanner:
         self.minDist = float('inf')
         self.nearestNodeIdx = -1
         self.FindNearest(0, newPoint)
-        # print(f"Nearest Node: ({self.nodeList[self.nearestNodeIdx].pos_x}, {self.nodeList[self.nearestNodeIdx].pos_y})")
+
         if self.nearestNodeIdx == -1:
             print("can not find nearest point!")
             return
         # do the steering
         next = self.GetSteerCoorindate(self.nearestNodeIdx, newPoint)
         # check obstacle
-        
-        if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]):
+        if (TreeNode(next[0], next[1]) == self.nodeList[self.nearestNodeIdx]):
+            print("invalid steering!")
+            breakpoint()
+
+        if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]): ## Check if this is correct
             return False
 
         # get neighbors
@@ -383,39 +397,39 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.06))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.06))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.06))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.06))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.08))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.08))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.08))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.08))
 
     #gates
-        planner.AddObstacles(Obstacles(0.4,-2.3,0.06))
-        planner.AddObstacles(Obstacles(0.4,-2.7,0.06))
-        planner.AddObstacles(Obstacles(0.5,-2.3,0.06))
-        planner.AddObstacles(Obstacles(0.5,-2.7,0.06))
-        planner.AddObstacles(Obstacles(0.6,-2.3,0.06))
-        planner.AddObstacles(Obstacles(0.6,-2.7,0.06))
+        planner.AddObstacles(Obstacles(0.4,-2.3,0.05))
+        planner.AddObstacles(Obstacles(0.4,-2.7,0.05))
+        planner.AddObstacles(Obstacles(0.5,-2.3,0.05))
+        planner.AddObstacles(Obstacles(0.5,-2.7,0.05))
+        planner.AddObstacles(Obstacles(0.6,-2.3,0.05))
+        planner.AddObstacles(Obstacles(0.6,-2.7,0.05))
         
-        planner.AddObstacles(Obstacles(2.17,-1.4,0.06)) #(2.2,-1.4,0.06))
-        planner.AddObstacles(Obstacles(1.83,-1.4,0.06)) #1.8,-1.4,0.06))
-        planner.AddObstacles(Obstacles(2.17,-1.5,0.06))
-        planner.AddObstacles(Obstacles(1.83,-1.5,0.06))
-        planner.AddObstacles(Obstacles(2.17,-1.6,0.06))
-        planner.AddObstacles(Obstacles(1.83,-1.6,0.06))
+        planner.AddObstacles(Obstacles(2.2,-1.4,0.05)) #(2.2,-1.4,0.05))
+        planner.AddObstacles(Obstacles(1.8,-1.4,0.05)) #1.8,-1.4,0.05))
+        planner.AddObstacles(Obstacles(2.2,-1.5,0.05))
+        planner.AddObstacles(Obstacles(1.8,-1.5,0.05))
+        planner.AddObstacles(Obstacles(2.2,-1.6,0.05))
+        planner.AddObstacles(Obstacles(1.8,-1.6,0.05))
 
-        planner.AddObstacles(Obstacles(-0.1,0.4,0.06))
-        planner.AddObstacles(Obstacles(-0.1,0.0,0.06))
-        planner.AddObstacles(Obstacles(0.0,0.4,0.06))
-        planner.AddObstacles(Obstacles(0.0,0.0,0.06))
-        planner.AddObstacles(Obstacles(0.1,0.4,0.06))
-        planner.AddObstacles(Obstacles(0.1,0.0,0.06))
+        planner.AddObstacles(Obstacles(-0.1,0.4,0.05))
+        planner.AddObstacles(Obstacles(-0.1,0.0,0.05))
+        planner.AddObstacles(Obstacles(0.0,0.4,0.05))
+        planner.AddObstacles(Obstacles(0.0,0.0,0.05))
+        planner.AddObstacles(Obstacles(0.1,0.4,0.05))
+        planner.AddObstacles(Obstacles(0.1,0.0,0.05))
 
-        planner.AddObstacles(Obstacles(-0.3,1.4,0.06))
-        planner.AddObstacles(Obstacles(-0.7,1.4,0.06))
-        planner.AddObstacles(Obstacles(-0.3,1.5,0.06))
-        planner.AddObstacles(Obstacles(-0.7,1.5,0.06))
-        planner.AddObstacles(Obstacles(-0.3,1.6,0.06))
-        planner.AddObstacles(Obstacles(-0.7,1.6,0.06))
+        planner.AddObstacles(Obstacles(-0.3,1.4,0.05))
+        planner.AddObstacles(Obstacles(-0.7,1.4,0.05))
+        planner.AddObstacles(Obstacles(-0.3,1.5,0.05))
+        planner.AddObstacles(Obstacles(-0.7,1.5,0.05))
+        planner.AddObstacles(Obstacles(-0.3,1.6,0.05))
+        planner.AddObstacles(Obstacles(-0.7,1.6,0.05))
 
 
     # planner.AddObstacles(Obstacles(60, 35, 5))
