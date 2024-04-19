@@ -1,0 +1,13 @@
+List of Issues:
+===
+
+Planner takes too long (cannot reporduce issue. Try all gate combos?)
+- Problem sequence:         gates_ordered = [gate2,gate1,gate4,gate3]
+        gates_ordered = [gate2,gate1,gate3,gate4]
+        [gate3,gate2,gate,gate4]
+
+
+Gates out of order not working
+Should try smoothing RRT star waypoints
+Add a straight Piecewise Trajectory to the gate sections (ie stop in front of gates before moving through)
+Iteration Counter (sometimes doesn't increment, sometimes skips an iteration)

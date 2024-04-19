@@ -386,6 +386,9 @@ def make_plan(start_x,start_y,gate_coords):
     goal_tolerance = 0.1
     collision_tolerance = 0.1
 
+    # Seed random number generator
+    np.random.seed(42)
+
     x_total = list()
     y_total = list()
 

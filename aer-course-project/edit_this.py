@@ -88,6 +88,7 @@ class Controller():
         self.initial_obs = initial_obs
         self.VERBOSE = verbose
         self.BUFFER_SIZE = buffer_size
+        self.iteration = 0
 
         # Store a priori scenario information.
         # plan the trajectory based on the information of the (1) gates and (2) obstacles. 
@@ -116,7 +117,7 @@ class Controller():
         # plot_trajectory(t_scaled, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
 
         # Draw the trajectory on PyBullet's GUI.
-        # draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
+        draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
 
 
     def planning(self, use_firmware, initial_info):
@@ -129,7 +130,9 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate4,gate1,gate3,gate2]
+        # gates_ordered = [gate3,gate1,gate2,gate4]
+
+        gates_ordered = [gate3,gate2,gate,gate4]
 
         waypoints_x, waypoints_y, splits = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
         splits.insert(0,0)
@@ -255,8 +258,14 @@ class Controller():
         # [INSTRUCTIONS] 
         # self.CTRL_FREQ is 30 (set in the getting_started.yaml file) 
         # control input iteration indicates the number of control inputs sent to the quadrotor
-        iteration = int(time*self.CTRL_FREQ)
+        iteration= int(time*self.CTRL_FREQ)
 
+        if iteration > self.iteration+1:
+            print(f"Missed iteration: {iteration-1}")
+            iteration = self.iteration+1
+        
+        self.iteration = iteration
+        print(f"Iteration: {iteration}")
         #########################
         # REPLACE THIS (START) ##
         #########################
