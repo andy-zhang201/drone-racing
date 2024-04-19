@@ -368,12 +368,15 @@ def make_plan(start_x,start_y,gate_coords):
     start = TreeNode(start_x, start_y)
     maxIters = 10000
     step_size = 0.2
-    rewire_radius = 0.5
+    rewire_radius = 0.4
     goal_tolerance = 0.1
     collision_tolerance = 0.1
 
     x_total = list()
     y_total = list()
+
+    # Indices where waypoints reach goal
+    splits = []
 
     for gol in gate_coords:
         goal = TreeNode(gol[0], gol[1])
@@ -536,9 +539,10 @@ def make_plan(start_x,start_y,gate_coords):
         y_total = y_total + y_sub
         #Set next start to the farthest additional waypoint
         start = TreeNode(x_back, y_back)
+        splits.append(len(x_total)-1)
 
         # # Add flag to signal end of subproblem
         # x_total.append(-1000)
         # y_total.append(-1000)
 
-    return x_total, y_total #return waypoints required to reach there. (limit to 10?)
+    return x_total, y_total, splits #return waypoints required to reach there. (limit to 10?)

@@ -135,7 +135,7 @@ class Controller():
         splits.insert(0,0)
 
         waypoints = []
-        # breakpoint()
+        breakpoint()
         height = initial_info["gate_dimensions"]["tall"]["height"]
         for i in range(len(waypoints_x)):
             if (waypoints_x[i] > -1000) & (waypoints_y[i] > -1000):
