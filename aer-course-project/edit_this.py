@@ -132,7 +132,7 @@ class Controller():
         ### INPUT ORDER OF GATES HERE ###
         # gates_ordered = [gate3,gate1,gate2,gate4]
 
-        gates_ordered = [gate3,gate2,gate,gate4]
+        gates_ordered = [gate4,gate1,gate3,gate2]
 
         waypoints_x, waypoints_y, splits = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
         splits.insert(0,0)
@@ -159,8 +159,12 @@ class Controller():
         self.ref_y = np.array([])
         self.ref_z = np.array([])
         t = np.arange(self.waypoints.shape[0])
-        duration = 20
+        duration = 30
         t_scaled=[]
+
+        # new_splits = [(0,splits[0])]
+        # for idx in splits[1:]:
+        #     new_splits.append((idx))
         
 
         for idx in splits[:-1]:
@@ -185,6 +189,13 @@ class Controller():
             self.ref_y = np.concatenate((self.ref_y, temp_fy(t_scaled_temp)))
             self.ref_z = np.concatenate((self.ref_z, temp_fz(t_scaled_temp)))
             t_scaled.append(t_scaled_temp)
+
+            # # Append gate waypoints
+            # self.ref_x = np.concatenate((self.ref_x, [waypoints[-1][0]]))
+            # self.ref_y = np.concatenate((self.ref_y, [waypoints[-1][1]]))
+            # self.ref_z = np.concatenate((self.ref_z, [waypoints[-1][2]]))
+            # t_scaled_temp = np.linspace(t_scaled[-1], t_scaled[-1] + 2, int(2*self.CTRL_FREQ))
+            # t_scaled.append(t_scaled_temp)
 
 
             # self.ref_x
@@ -269,6 +280,15 @@ class Controller():
         #########################
         # REPLACE THIS (START) ##
         #########################
+        # Flight splits:
+        cmdFullStateStart = 3
+        duration = 30
+
+        cmdFullStateEnd = cmdFullStateStart + duration
+
+        landStart = cmdFullStateEnd + 3
+
+        turnOffTime = landStart + 3
 
         # print("The info. of the gates ")
         # print(self.NOMINAL_GATES)
@@ -281,7 +301,7 @@ class Controller():
             args = [height, duration]
 
         # [INSTRUCTIONS] Example code for using cmdFullState interface   
-        elif iteration >= 3*self.CTRL_FREQ and iteration < 23*self.CTRL_FREQ:
+        elif iteration >= cmdFullStateStart*self.CTRL_FREQ and iteration < cmdFullStateEnd*self.CTRL_FREQ:
             step = min(iteration-3*self.CTRL_FREQ, len(self.ref_x) -1)
             target_pos = np.array([self.ref_x[step], self.ref_y[step], self.ref_z[step]])
             target_vel = np.zeros(3)
@@ -292,39 +312,18 @@ class Controller():
             command_type = Command(1)  # cmdFullState.
             args = [target_pos, target_vel, target_acc, target_yaw, target_rpy_rates]
 
-        elif iteration == 23*self.CTRL_FREQ:
+        elif iteration == cmdFullStateEnd*self.CTRL_FREQ:
             command_type = Command(6)  # Notify setpoint stop.
             args = []
 
-        # [INSTRUCTIONS] Example code for using goTo interface 
-        elif iteration == 23*self.CTRL_FREQ+1:
-            x = self.ref_x[-1]
-            y = self.ref_y[-1]
-            z = 1.5 
-            yaw = 0.
-            duration = 2.5
-
-            command_type = Command(5)  # goTo.
-            args = [[x, y, z], yaw, duration, False]
-
-        elif iteration == 26*self.CTRL_FREQ:
-            x = self.initial_obs[0]
-            y = self.initial_obs[2]
-            z = 1.5
-            yaw = 0.
-            duration = 6
-
-            command_type = Command(5)  # goTo.
-            args = [[x, y, z], yaw, duration, False]
-
-        elif iteration == 33*self.CTRL_FREQ:
+        elif iteration == landStart*self.CTRL_FREQ:
             height = 0.
             duration = 3
 
             command_type = Command(3)  # Land.
             args = [height, duration]
 
-        elif iteration == 37*self.CTRL_FREQ-1:
+        elif iteration == turnOffTime*self.CTRL_FREQ-1:
             command_type = Command(4)  # STOP command to be sent once the trajectory is completed.
             args = []
 

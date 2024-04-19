@@ -400,10 +400,10 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.08))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.08))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.08))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.08))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.13))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.13))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.13))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.13))
 
     #gates
         planner.AddObstacles(Obstacles(0.4,-2.3,0.05))
