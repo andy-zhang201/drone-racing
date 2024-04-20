@@ -381,8 +381,8 @@ def make_plan(start_x,start_y,gate_coords):
     # starting node
     start = TreeNode(start_x, start_y)
     maxIters = 10000
-    step_size = 0.2
-    rewire_radius = 0.4
+    step_size = 0.1
+    rewire_radius = 1
     goal_tolerance = 0.1
     collision_tolerance = 0.1
 
@@ -400,10 +400,10 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.13))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.13))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.13))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.13))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.10))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.10))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.10))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.10))
 
     #gates
         planner.AddObstacles(Obstacles(0.4,-2.3,0.05))

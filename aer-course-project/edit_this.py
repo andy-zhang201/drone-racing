@@ -132,7 +132,7 @@ class Controller():
         ### INPUT ORDER OF GATES HERE ###
         # gates_ordered = [gate3,gate1,gate2,gate4]
 
-        gates_ordered = [gate4,gate1,gate3,gate2]
+        gates_ordered = [gate1,gate3,gate2,gate4]
 
         waypoints_x, waypoints_y, splits = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
         splits.insert(0,0)
@@ -141,7 +141,8 @@ class Controller():
         height = initial_info["gate_dimensions"]["tall"]["height"]
         for i in range(len(waypoints_x)):
             waypoints.append([waypoints_x[i], waypoints_y[i], height])
-            
+
+        print(waypoints)   
 
         # How to trajectory plan better:
         """
@@ -159,7 +160,7 @@ class Controller():
         self.ref_y = np.array([])
         self.ref_z = np.array([])
         t = np.arange(self.waypoints.shape[0])
-        duration = 30
+        duration = 20
         t_scaled=[]
 
         # new_splits = [(0,splits[0])]
@@ -282,7 +283,7 @@ class Controller():
         #########################
         # Flight splits:
         cmdFullStateStart = 3
-        duration = 30
+        duration = 20
 
         cmdFullStateEnd = cmdFullStateStart + duration
 
