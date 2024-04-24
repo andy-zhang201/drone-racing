@@ -483,7 +483,31 @@ def make_plan(start_x,start_y,gate_coords):
         # print(f"Length of Nodes: {len(planner.nodeList)}")
         res = planner.FormPath()
         visualize(planner)
-   
+        
+        # ### Prune waypoints with straight line check to remove intermediate waypoints
+        #Vars
+        print("======================\n VARS \n ======================")
+        print("Final Path: ", res)
+
+        #iterate through res
+        cur_node_idx = res[0]
+        while cur_node_idx != res[-1]:
+            
+            #get next node
+            next_node_idx = res[res.index(cur_node_idx)+1]
+
+            #check if line between cur_node and next_node is clear
+            cur_node = np.array([planner.nodeList[cur_node_idx].pos_x, planner.nodeList[cur_node_idx].pos_y])
+            if planner.CheckCollision(cur_node, planner.nodeList[next_node_idx]):
+                #remove next node
+                res.remove(next_node_idx)
+
+            else:
+                cur_node_idx = next_node_idx
+
+        print(f"NEW RES:     {res}")
+        
+        ##############################
 
         #Update Start Location
         old_start = start
@@ -508,9 +532,7 @@ def make_plan(start_x,start_y,gate_coords):
 
         buffer_distance = 0.25
         direction = gol[-2]
-        beginning = np.array([old_start.pos_x, old_start.pos_y])
-        ending = np.array([gol[0], gol[1]])
-        
+        beginning = np.array([old_start.pos_x, old_start.pos_y])        
 
         # If goal is facing north/south
         if (direction == 0):
@@ -582,8 +604,6 @@ def make_plan(start_x,start_y,gate_coords):
         start = TreeNode(x_back, y_back)
         splits.append(len(x_total)-1)
 
-        # # Add flag to signal end of subproblem
-        # x_total.append(-1000)
-        # y_total.append(-1000)
+
 
     return x_total, y_total, splits #return waypoints required to reach there. (limit to 10?)
