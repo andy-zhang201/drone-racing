@@ -2,18 +2,16 @@ List of Issues:
 ===
 
 Planner takes too long (cannot reporduce issue. Try all gate combos?) [DONE]
-- Problem sequence:         gates_ordered = [gate2,gate1,gate4,gate3]
-        gates_ordered = [gate2,gate1,gate3,gate4]
-        [gate3,gate2,gate,gate4]
-
+Iteration Counter (sometimes doesn't increment, sometimes skips an iteration) [DONE]
+Add a straight Piecewise Trajectory to the gate sections [CANCELLED]
+RESTORE CODE [DONE]
 Straight line Traj Tracker [DONE]
+
+Stop in front of gates before moving through (doesn't always work b/c you cannot predict timing of splits)
 Pruning RRT* to use fewer straight lines [DONE]
 - NEW ISSUES: 
 -- Colision checking is acting up again ...
 -- Waypoints getting unintentionally deleted if they fall between front and back.
-Add a straight Piecewise Trajectory to the gate sections [CANCELLED] [Current implementation is "close enough"]
-Slow down the drone when passing through gates [Done?] [Constant speed]
-FIX CODE [DONE]
 
-Stop in front of gates before moving through (doesn't always work b/c you cannot predict timing of splits)
-Iteration Counter (sometimes doesn't increment, sometimes skips an iteration) [DONE]
+[!!] Slow down the drone when passing through gates
+[TROUBLE] 3214 order is bad! 4213 is also bad! 1423

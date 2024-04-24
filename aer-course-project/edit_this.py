@@ -119,7 +119,7 @@ class Controller():
         # Draw the trajectory on PyBullet's GUI.
         draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
         
-    def straight_line_trajs(self, waypoints,speed=1):
+    def straight_line_trajs(self, waypoints,speed=1, passing_speed = 0.3):
         """
         Generate straight line trajectories between waypoints
         """
@@ -130,6 +130,12 @@ class Controller():
             end = waypoints[i+1]
             distance = np.linalg.norm(np.array(start[:2])-np.array(end[:2]))
             duration = distance/speed
+
+            # If end is close to a goal, reduce speed
+            for goal in self.NOMINAL_GATES:
+                if np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.5:
+                    duration = distance/passing_speed
+
             trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
             trajs_y = np.concatenate((trajs_y, np.linspace(start[1], end[1], int(duration*self.CTRL_FREQ))))
                                      
@@ -145,7 +151,9 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate4,gate3,gate1,gate2]
+        gates_ordered = [gate1,gate2,gate3,gate4]
+
+        #########################
 
         waypoints_x, waypoints_y, splits = ecu.make_plan(self.initial_obs[0],self.initial_obs[2], gates_ordered)
         splits.insert(0,0)

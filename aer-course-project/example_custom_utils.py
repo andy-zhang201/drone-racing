@@ -167,6 +167,7 @@ class RRTStarPlanner:
 
         if goal:
             newPoint = np.array([goal.pos_x, goal.pos_y])
+            print("Sample at goal")
         
         # find the nearest node in the tree
         self.minDist = float('inf')
@@ -184,6 +185,7 @@ class RRTStarPlanner:
             breakpoint()
 
         if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]): ## Check if this is correct
+            print("collision detected!")
             return False
 
         # get neighbors
@@ -280,14 +282,14 @@ class Obstacles:
         # if tmp is less than l and greater than 0, means that the nearest point in on the line segement
         if tmp>= 0 and tmp <= l:
             dist = p - tmp * n0
-            return np.linalg.norm(dist) <= self.radius + tolerance
+            return np.linalg.norm(dist) <= (self.radius + tolerance)
         
         # if tmp lies outside of the line segement, check the starting and ending points
         return self.DetectPointCollision(starting_x, starting_y, tolerance) or self.DetectPointCollision(ending_x, ending_y, tolerance)
 
 
     def DetectPointCollision(self, pos_x, pos_y, tolerance):
-        return np.sqrt((self.center_x - pos_x)**2 + (self.center_y - pos_y)**2) <= self.radius + tolerance
+        return np.sqrt((self.center_x - pos_x)**2 + (self.center_y - pos_y)**2) <= (self.radius + tolerance)
 
 
 def GenerateMapBorder(squareMap):
@@ -336,55 +338,16 @@ def visualize(planner):
     plt.axis('equal')
     plt.show()
 
-
-def exampleFunction():
-    """Example of user-defined function.
-
-    """
-    x = -1
-    return x
-
-def make_map_bounds():
-
-    #x,y
-    return np.array([[-3.5,3.5],[-3.5,3.5]])
-
-def add_gates(): #Just as big circles for now
-    '''
-      [ 0.5, -2.5, 0, 0, 0, -1.57, 0],      # gate 1
-      [ 2.0, -1.5, 0, 0, 0, 0,     0],      # gate 2
-      [ 0.0,  0.2, 0, 0, 0, 1.57,  0],      # gate 3
-      [-0.5,  1.5, 0, 0, 0, 0,     0]       # gate 4
-    '''
-
-    gate1 = np.array([0.5, -2.5,0.5])
-    gate2 = np.array([2.0, -1.5,0.5])
-    gate3 = np.array([0.0,  0.2,0.5])
-    gate4 = np.array([-0.5,  1.5,0.5])
-    
-    return [gate1, gate2,gate3]
-
-def add_obstacles(): #Small circles
-    return []
-
-def add_start():
-
-    #Init state
-    return [-1.0, -3.0]
-
-def add_end():
-    return [-0.5, 1.5]
-
 def make_plan(start_x,start_y,gate_coords):
     squareMap = SquareMap(-3.5, -3.5, 3.5, 3.5)
 
     # starting node
     start = TreeNode(start_x, start_y)
-    maxIters = 2000
+    maxIters = 10000
     step_size = 0.2
     rewire_radius = 0.5
     goal_tolerance = 0.1
-    collision_tolerance = 0.1
+    collision_tolerance = 0.05
     # maxIters = 10000
     # step_size = 0.2
     # rewire_radius = 0.4
@@ -406,10 +369,10 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.2))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.2))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.2))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.2))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.25))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.25))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.25))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.25))
 
     #gates
         planner.AddObstacles(Obstacles(0.4,-2.3,0.05))
@@ -442,8 +405,11 @@ def make_plan(start_x,start_y,gate_coords):
 
 
     # planner.AddObstacles(Obstacles(60, 35, 5))
-
+        # breakpoint()
         for _ in range(maxIters):
+            if gol == gate_coords[-1] and _ %10 == 0:
+                print(f"Iteration: {_}")
+
             goal_coords_sampling=None
 
             if _ % 10 == 0:
@@ -451,13 +417,13 @@ def make_plan(start_x,start_y,gate_coords):
 
             if (_ % 11 == 0) & (_ % 110 != 0):
                 # Sample around the middle of the subarea
-                topRight_x = max(start.pos_x+0.2, goal.pos_x+0.2)
-                topRight_y = max(start.pos_y+0.2, goal.pos_y+0.2)
-                bottomleft_x = min(start.pos_x-0.2, goal.pos_x-0.2)
-                bottomleft_y = min(start.pos_y-0.2, goal.pos_y-0.2)
+                topRight_x = max(start.pos_x, goal.pos_x) +0.2
+                topRight_y = max(start.pos_y, goal.pos_y) +0.2
+                bottomleft_x = min(start.pos_x, goal.pos_x) - 0.2
+                bottomleft_y = min(start.pos_y, goal.pos_y) -0.2
 
-                x_middle = (bottomleft_x + topRight_x) / 2
-                y_middle = (bottomleft_y + topRight_y) / 2
+                x_middle = (start.pos_x + goal.pos_x) / 2
+                y_middle = (start.pos_x + goal.pos_x) / 2
                 # region is a square around the middle of the map 20% of the size of the map
                 buffer_x = abs(0.2*(topRight_x - bottomleft_x))
                 buffer_y = abs(0.2*(topRight_y - bottomleft_y))
@@ -467,17 +433,19 @@ def make_plan(start_x,start_y,gate_coords):
 
                 goal_coords_sampling = TreeNode(x_sample, y_sample)
         
-        # print(f"Iteration: {_}")
+            # print(f"Iteration: {_}")
             if planner.UpdateOneStep(goal_coords_sampling):
                 parentIdx = planner.nodeList[-1].parent
                 x = [planner.nodeList[-1].pos_x, planner.nodeList[parentIdx].pos_x]
                 y = [planner.nodeList[-1].pos_y, planner.nodeList[parentIdx].pos_y]
 
                 if planner.CheckGoal(planner.nodeList[-1]):
+                    # breakpoint()
                     planner.pathFound = True
                     parentIdx = len(planner.nodeList) - 1
                     planner.nodeList.append(planner.goal_pos)
                     planner.nodeList[-1].parent = parentIdx
+                    print("Goal Reached! Iterations: ", _)
                     break
 
         # print(f"Length of Nodes: {len(planner.nodeList)}")
