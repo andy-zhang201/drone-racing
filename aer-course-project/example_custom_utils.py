@@ -380,11 +380,17 @@ def make_plan(start_x,start_y,gate_coords):
 
     # starting node
     start = TreeNode(start_x, start_y)
-    maxIters = 10000
-    step_size = 0.1
-    rewire_radius = 1
+    maxIters = 2000
+    step_size = 0.2
+    rewire_radius = 0.5
     goal_tolerance = 0.1
     collision_tolerance = 0.1
+    # maxIters = 10000
+    # step_size = 0.2
+    # rewire_radius = 0.4
+    # goal_tolerance = 0.1
+    # collision_tolerance = 0.1
+
 
     # Seed random number generator
     np.random.seed(42)
@@ -400,10 +406,10 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.10))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.10))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.10))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.10))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.2))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.2))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.2))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.2))
 
     #gates
         planner.AddObstacles(Obstacles(0.4,-2.3,0.05))
@@ -442,6 +448,24 @@ def make_plan(start_x,start_y,gate_coords):
 
             if _ % 10 == 0:
                 goal_coords_sampling = goal
+
+            if (_ % 11 == 0) & (_ % 110 != 0):
+                # Sample around the middle of the subarea
+                topRight_x = max(start.pos_x+0.2, goal.pos_x+0.2)
+                topRight_y = max(start.pos_y+0.2, goal.pos_y+0.2)
+                bottomleft_x = min(start.pos_x-0.2, goal.pos_x-0.2)
+                bottomleft_y = min(start.pos_y-0.2, goal.pos_y-0.2)
+
+                x_middle = (bottomleft_x + topRight_x) / 2
+                y_middle = (bottomleft_y + topRight_y) / 2
+                # region is a square around the middle of the map 20% of the size of the map
+                buffer_x = abs(0.2*(topRight_x - bottomleft_x))
+                buffer_y = abs(0.2*(topRight_y - bottomleft_y))
+                
+                x_sample = np.random.uniform(x_middle - buffer_x, x_middle + buffer_x)
+                y_sample = np.random.uniform(y_middle - buffer_y, y_middle + buffer_y)
+
+                goal_coords_sampling = TreeNode(x_sample, y_sample)
         
         # print(f"Iteration: {_}")
             if planner.UpdateOneStep(goal_coords_sampling):

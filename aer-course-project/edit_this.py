@@ -118,7 +118,22 @@ class Controller():
 
         # Draw the trajectory on PyBullet's GUI.
         draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
-
+        
+    def straight_line_trajs(self, waypoints,speed=1):
+        """
+        Generate straight line trajectories between waypoints
+        """
+        trajs_x = np.array([])
+        trajs_y = np.array([])
+        for i in range(len(waypoints)-1):
+            start = waypoints[i]
+            end = waypoints[i+1]
+            distance = np.linalg.norm(np.array(start[:2])-np.array(end[:2]))
+            duration = distance/speed
+            trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
+            trajs_y = np.concatenate((trajs_y, np.linspace(start[1], end[1], int(duration*self.CTRL_FREQ))))
+                                     
+        return trajs_x, trajs_y
 
     def planning(self, use_firmware, initial_info):
         """Trajectory planning algorithm"""
@@ -161,7 +176,7 @@ class Controller():
         self.ref_z = np.array([])
         t = np.arange(self.waypoints.shape[0])
         duration = 20
-        t_scaled=[]
+        t_scaled=np.array([])
 
         # new_splits = [(0,splits[0])]
         # for idx in splits[1:]:
@@ -189,7 +204,7 @@ class Controller():
             self.ref_x = np.concatenate((self.ref_x, temp_fx(t_scaled_temp)))
             self.ref_y = np.concatenate((self.ref_y, temp_fy(t_scaled_temp)))
             self.ref_z = np.concatenate((self.ref_z, temp_fz(t_scaled_temp)))
-            t_scaled.append(t_scaled_temp)
+            t_scaled = np.concatenate((t_scaled, t_scaled_temp))
 
             # # Append gate waypoints
             # self.ref_x = np.concatenate((self.ref_x, [waypoints[-1][0]]))
@@ -205,32 +220,17 @@ class Controller():
         self.ref_y = np.concatenate((self.ref_y, [waypoints[-1][1]]))
         self.ref_z = np.concatenate((self.ref_z, [waypoints[-1][2]]))
         t_scaled_temp = np.linspace(t_scaled[-1], t_scaled[-1] + 2, int(2*self.CTRL_FREQ))
-        t_scaled.append(t_scaled_temp)
+        t_scaled = np.concatenate((t_scaled, t_scaled_temp))
+        
+        #OVERRIDE
+        speed = 0.8 #speed in m/s. Cant be too low or else cmdFirmware moves on before traj is done
+        x_points, y_points = self.straight_line_trajs(waypoints, speed) 
 
-        # deg = len(self.waypoints) - 18
-        # t = np.arange(self.waypoints.shape[0])
-        # fx = np.poly1d(np.polyfit(t, self.waypoints[:,0], deg))
-        # fy = np.poly1d(np.polyfit(t, self.waypoints[:,1], deg))
-        # fz = np.poly1d(np.polyfit(t, self.waypoints[:,2], deg))
-        # duration = 13
-        # print(f'T: {len(t)}')
-        # t_s1 = np.linspace(t[0], t[10], int(duration*self.CTRL_FREQ))
-        # t_s2 = np.linspace(t[10], t[-1], int(duration*self.CTRL_FREQ*2))
-        # # t_scaled = np.linspace(t[0], t[-1], int(duration*self.CTRL_FREQ))
-        # t_scaled = np.concatenate((t_s1, t_s2))
-        # #print(t_scaled)
-        # print("This is fx:")
-        # print(fx(t_scaled))
+        self.ref_x = x_points
+        self.ref_y = y_points
+        self.ref_z = np.ones(len(x_points))*height
 
-        # self.ref_x = fx(t_scaled)
-        # self.ref_y = fy(t_scaled)
-        # self.ref_z = fz(t_scaled)
-
-        # self.ref_x = self.waypoints[:,0]
-        # self.ref_y = self.waypoints[:,1]
-        # self.ref_z = self.waypoints[:,2]
-
-
+        t_scaled = np.linspace(0, duration, len(x_points))
 
         #########################
         # REPLACE THIS (END) ####
