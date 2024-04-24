@@ -167,7 +167,7 @@ class RRTStarPlanner:
 
         if goal:
             newPoint = np.array([goal.pos_x, goal.pos_y])
-            print("Sample at goal")
+            # print("Sample at goal")
         
         # find the nearest node in the tree
         self.minDist = float('inf')
@@ -185,7 +185,7 @@ class RRTStarPlanner:
             breakpoint()
 
         if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]): ## Check if this is correct
-            print("collision detected!")
+            # print("collision detected!")
             return False
 
         # get neighbors
@@ -345,7 +345,7 @@ def make_plan(start_x,start_y,gate_coords):
     start = TreeNode(start_x, start_y)
     maxIters = 10000
     step_size = 0.2
-    rewire_radius = 0.5
+    rewire_radius = 0.4
     goal_tolerance = 0.1
     collision_tolerance = 0.05
     # maxIters = 10000
@@ -415,7 +415,7 @@ def make_plan(start_x,start_y,gate_coords):
             if _ % 10 == 0:
                 goal_coords_sampling = goal
 
-            if (_ % 11 == 0) & (_ % 110 != 0):
+            if (_ % 23 == 0) & (_ % 230 != 0):
                 # Sample around the middle of the subarea
                 topRight_x = max(start.pos_x, goal.pos_x) +0.2
                 topRight_y = max(start.pos_y, goal.pos_y) +0.2
@@ -430,6 +430,10 @@ def make_plan(start_x,start_y,gate_coords):
                 
                 x_sample = np.random.uniform(x_middle - buffer_x, x_middle + buffer_x)
                 y_sample = np.random.uniform(y_middle - buffer_y, y_middle + buffer_y)
+
+                # print(f"X Range: {x_middle - buffer_x} to {x_middle + buffer_x}")
+                # print(f"Y Range: {y_middle - buffer_y} to {y_middle + buffer_y}")
+                # print(f"Sample: ({x_sample}, {y_sample})")
 
                 goal_coords_sampling = TreeNode(x_sample, y_sample)
         
@@ -498,7 +502,7 @@ def make_plan(start_x,start_y,gate_coords):
         
         """
 
-        buffer_distance = 0.25
+        buffer_distance = 0.3
         direction = gol[-2]
         beginning = np.array([old_start.pos_x, old_start.pos_y])        
 

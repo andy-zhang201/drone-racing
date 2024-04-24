@@ -125,15 +125,16 @@ class Controller():
         """
         trajs_x = np.array([])
         trajs_y = np.array([])
+
         for i in range(len(waypoints)-1):
             start = waypoints[i]
             end = waypoints[i+1]
             distance = np.linalg.norm(np.array(start[:2])-np.array(end[:2]))
             duration = distance/speed
 
-            # If end is close to a goal, reduce speed
+            # If end waypoint is goal, reduce speed
             for goal in self.NOMINAL_GATES:
-                if np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.5:
+                if np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.1:
                     duration = distance/passing_speed
 
             trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
@@ -151,7 +152,7 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate1,gate2,gate3,gate4]
+        gates_ordered = [gate4,gate3,gate2,gate1]
 
         #########################
 
@@ -175,60 +176,11 @@ class Controller():
         print(f"Waypoints length: {len(waypoints)}")
 
         self.waypoints = np.array(waypoints)
-        self.ref_x = np.array([])
-        self.ref_y = np.array([])
-        self.ref_z = np.array([])
-        t = np.arange(self.waypoints.shape[0])
         duration = 20
-        t_scaled=np.array([])
-
-        # new_splits = [(0,splits[0])]
-        # for idx in splits[1:]:
-        #     new_splits.append((idx))
-        
-
-        for idx in splits[:-1]:
-            print(f"Split at {idx}")
-            temp_waypoints = np.array(waypoints[idx:splits[splits.index(idx)+1]-1])
-
-            if idx == splits[-2]:
-                print('Last split')
-                temp_waypoints = np.array(waypoints[idx:])
-
-            deg = int(len(temp_waypoints)/2)
-            t_temp = np.arange(temp_waypoints.shape[0])
-            temp_fx = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,0], deg))
-            temp_fy = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,1], deg))
-            temp_fz = np.poly1d(np.polyfit(t_temp, temp_waypoints[:,2], deg))
-
-            temp_duration = duration*len(temp_waypoints)/len(waypoints)
-
-            t_scaled_temp = np.linspace(t_temp[0], t_temp[-1], int(temp_duration*self.CTRL_FREQ))
-
-            self.ref_x = np.concatenate((self.ref_x, temp_fx(t_scaled_temp)))
-            self.ref_y = np.concatenate((self.ref_y, temp_fy(t_scaled_temp)))
-            self.ref_z = np.concatenate((self.ref_z, temp_fz(t_scaled_temp)))
-            t_scaled = np.concatenate((t_scaled, t_scaled_temp))
-
-            # # Append gate waypoints
-            # self.ref_x = np.concatenate((self.ref_x, [waypoints[-1][0]]))
-            # self.ref_y = np.concatenate((self.ref_y, [waypoints[-1][1]]))
-            # self.ref_z = np.concatenate((self.ref_z, [waypoints[-1][2]]))
-            # t_scaled_temp = np.linspace(t_scaled[-1], t_scaled[-1] + 2, int(2*self.CTRL_FREQ))
-            # t_scaled.append(t_scaled_temp)
-
-
-            # self.ref_x
-        # Append last waypoint
-        self.ref_x = np.concatenate((self.ref_x, [waypoints[-1][0]]))
-        self.ref_y = np.concatenate((self.ref_y, [waypoints[-1][1]]))
-        self.ref_z = np.concatenate((self.ref_z, [waypoints[-1][2]]))
-        t_scaled_temp = np.linspace(t_scaled[-1], t_scaled[-1] + 2, int(2*self.CTRL_FREQ))
-        t_scaled = np.concatenate((t_scaled, t_scaled_temp))
         
         #OVERRIDE
         speed = 0.8 #speed in m/s. Cant be too low or else cmdFirmware moves on before traj is done
-        x_points, y_points = self.straight_line_trajs(waypoints, speed) 
+        x_points, y_points = self.straight_line_trajs(waypoints, speed)
 
         self.ref_x = x_points
         self.ref_y = y_points

@@ -14,4 +14,5 @@ Pruning RRT* to use fewer straight lines [DONE]
 -- Waypoints getting unintentionally deleted if they fall between front and back.
 
 [!!] Slow down the drone when passing through gates
-[TROUBLE] 3214 order is bad! 4213 is also bad! 1423
+[TROUBLE] 3214 order is bad! 4213 is also bad! 1423 [SOLVED]
+[Bonus] Velocity profiles for trajectories
