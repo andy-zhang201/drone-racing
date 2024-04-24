@@ -132,9 +132,9 @@ class Controller():
             distance = np.linalg.norm(np.array(start[:2])-np.array(end[:2]))
             duration = distance/speed
 
-            # If end waypoint is goal, reduce speed
+            # If end or start waypoint is near a goal, reduce speed
             for goal in self.NOMINAL_GATES:
-                if np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.1:
+                if (np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.31) or (np.linalg.norm(np.array(start[:2])-np.array(goal[:2])) < 0.31):
                     duration = distance/passing_speed
 
             trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
@@ -152,7 +152,7 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate4,gate3,gate2,gate1]
+        gates_ordered = [gate1,gate3,gate2,gate4]
 
         #########################
 

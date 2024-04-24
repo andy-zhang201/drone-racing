@@ -347,7 +347,7 @@ def make_plan(start_x,start_y,gate_coords):
     step_size = 0.2
     rewire_radius = 0.4
     goal_tolerance = 0.1
-    collision_tolerance = 0.05
+    collision_tolerance = 0.1
     # maxIters = 10000
     # step_size = 0.2
     # rewire_radius = 0.4
@@ -369,10 +369,10 @@ def make_plan(start_x,start_y,gate_coords):
         planner = RRTStarPlanner(squareMap, start, goal, maxIters, step_size, rewire_radius, goal_tolerance, collision_tolerance)
 
     #planner.AddObstacles(Obstacles(-0.5, 0, 0.5))
-        planner.AddObstacles(Obstacles(1.5, -2.5, 0.25))
-        planner.AddObstacles(Obstacles(0.5, -1, 0.25))
-        planner.AddObstacles(Obstacles(1.5, 0.0, 0.25))
-        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.25))
+        planner.AddObstacles(Obstacles(1.5, -2.5, 0.26))
+        planner.AddObstacles(Obstacles(0.5, -1, 0.26))
+        planner.AddObstacles(Obstacles(1.5, 0.0, 0.26))
+        planner.AddObstacles(Obstacles(-1.0, 0.0, 0.26))
 
     #gates
         planner.AddObstacles(Obstacles(0.4,-2.3,0.05))
@@ -502,7 +502,7 @@ def make_plan(start_x,start_y,gate_coords):
         
         """
 
-        buffer_distance = 0.3
+        buffer_distance = 0.25
         direction = gol[-2]
         beginning = np.array([old_start.pos_x, old_start.pos_y])        
 
