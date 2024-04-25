@@ -94,19 +94,11 @@ class RRTStarPlanner:
 
 
     def CheckCollision(self, currPoint, node):
-        # check obstacle
-        # breakpoint()
-        # This if statement NEVER triggers. Could goal never be checked for collision?
-
-        # if self.CheckGoal(node) or ((abs(currPoint[0] - self.goal_pos.pos_x) < 0.8) and (abs(currPoint[1] - self.goal_pos.pos_y) < 0.8)):
-            # print(f"Checking collision with Goal: ({node.pos_x}, {node.pos_y})")
-            # print(f"Other point: ({currPoint[0]}, {currPoint[1]})")
-            # print("=====================================")
-            # print(f"Goal point: ({self.goal_pos.pos_x}, {self.goal_pos.pos_y})")
-            # breakpoint()
+        
     
         for ob in self.obstacleList:
             # self.collisionTolerance
+            
             if ob.DetectLineCollision(currPoint[0], currPoint[1], node.pos_x, node.pos_y, self.collisionTolerance):
                 return False
             
@@ -182,7 +174,7 @@ class RRTStarPlanner:
         # check obstacle
         if (TreeNode(next[0], next[1]) == self.nodeList[self.nearestNodeIdx]):
             print("invalid steering!")
-            breakpoint()
+            # breakpoint()
 
         if not self.CheckCollision(next, self.nodeList[self.nearestNodeIdx]): ## Check if this is correct
             # print("collision detected!")
@@ -276,7 +268,8 @@ class Obstacles:
             return True
         
         n0 = FindDirection(starting_x, starting_y, ending_x, ending_y)
-        l = np.sqrt((starting_x - starting_y)**2 + (ending_x - ending_y)**2)
+        # l = np.sqrt((starting_x - starting_y)**2 + (ending_x - ending_y)**2) #????
+        l = np.linalg.norm(np.array([starting_x, starting_y]) - np.array([ending_x, ending_y]))
         p = np.array([self.center_x - starting_x, self.center_y - starting_y])
         tmp = np.inner(p, n0)
         # if tmp is less than l and greater than 0, means that the nearest point in on the line segement
@@ -463,14 +456,16 @@ def make_plan(start_x,start_y,gate_coords):
 
         #iterate through res
         cur_node_idx = res[0]
-        while cur_node_idx != res[-1]:
+        # breakpoint()
+        while cur_node_idx != res[-1] and res[res.index(cur_node_idx)+1] != res[-1]:
             
             #get next node
             next_node_idx = res[res.index(cur_node_idx)+1]
+            next_next_node_idx = res[res.index(cur_node_idx)+2]
 
-            #check if line between cur_node and next_node is clear
+            #check if line between cur_node and next_next_node is clear
             cur_node = np.array([planner.nodeList[cur_node_idx].pos_x, planner.nodeList[cur_node_idx].pos_y])
-            if planner.CheckCollision(cur_node, planner.nodeList[next_node_idx]):
+            if planner.CheckCollision(cur_node, planner.nodeList[next_next_node_idx]):
                 #remove next node
                 res.remove(next_node_idx)
 
@@ -522,7 +517,9 @@ def make_plan(start_x,start_y,gate_coords):
             #delete any waypoints which come in between the back and front waypoints
             idx = 0
             while idx < len(x_sub):
-                if (y_sub[idx] > min(y_front,y_back)) and (y_sub[idx] < max(y_front,y_back)):
+                is_between_y = (y_sub[idx] > min(y_front,y_back)) and (y_sub[idx] < max(y_front,y_back))
+                is_between_x = (x_sub[idx] > min(x_front,x_back)-0.2) and (x_sub[idx] < max(x_front,x_back) + 0.2)
+                if is_between_y and is_between_x:
                     del x_sub[idx]
                     del y_sub[idx]
 
@@ -546,7 +543,9 @@ def make_plan(start_x,start_y,gate_coords):
             idx = 0
             while idx < len(x_sub):
                 x = x_sub[idx]
-                if (x > min(x_front, x_back)) and (x < max(x_front, x_back)):
+                is_between_x = ((x > min(x_front, x_back)) and (x < max(x_front, x_back)))
+                is_between_y = (y_sub[idx] > min(y_front,y_back)-0.2) and (y_sub[idx] < max(y_front,y_back) + 0.2)
+                if is_between_x and is_between_y:
                     del x_sub[idx]
                     del y_sub[idx]
 

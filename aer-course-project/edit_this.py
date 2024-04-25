@@ -152,7 +152,7 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate1,gate3,gate2,gate4]
+        gates_ordered = [gate1,gate4,gate2,gate3]
 
         #########################
 
