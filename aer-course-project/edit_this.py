@@ -119,13 +119,12 @@ class Controller():
         # Draw the trajectory on PyBullet's GUI.
         draw_trajectory(initial_info, self.waypoints, self.ref_x, self.ref_y, self.ref_z)
         
-    def straight_line_trajs(self, waypoints,speed=1, passing_speed = 0.3):
+    def straight_line_trajs(self, waypoints,speed=1, passing_speed = 0.5):
         """
         Generate straight line trajectories between waypoints
         """
         trajs_x = np.array([])
         trajs_y = np.array([])
-        vel_profiling = False
 
         for i in range(len(waypoints)-1):
             start = waypoints[i]
@@ -135,38 +134,11 @@ class Controller():
 
             # If end or start waypoint is near a goal, reduce speed
             for goal in self.NOMINAL_GATES:
-                if (np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.21) or (np.linalg.norm(np.array(start[:2])-np.array(goal[:2])) < 0.21):
+                if (np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.31) or (np.linalg.norm(np.array(start[:2])-np.array(goal[:2])) < 0.31):
                     duration = distance/passing_speed
 
-                if (np.linalg.norm(np.array(end[:2])-np.array(goal[:2])) < 0.3):
-                    if distance > 0.4:
-                        vel_profiling = True
-
-                    else:
-                        duration = distance/passing_speed
-
-
-            if not vel_profiling:
-                trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
-                trajs_y = np.concatenate((trajs_y, np.linspace(start[1], end[1], int(duration*self.CTRL_FREQ))))
-
-            else:
-                fraction_distance = 0.2
-                fast_duration = distance*(1-fraction_distance)/speed
-                slow_duration = distance*(fraction_distance)/passing_speed
-
-                #linear interpolation
-                fast_end = [start[0] + (end[0]-start[0])*fraction_distance, start[1] + (end[1]-start[1])*fraction_distance]
-                
-                #Create Fast Trajectory
-                trajs_x = np.concatenate((trajs_x, np.linspace(start[0], fast_end[0], int(fast_duration*self.CTRL_FREQ))))
-                trajs_y = np.concatenate((trajs_y, np.linspace(start[1], fast_end[1], int(fast_duration*self.CTRL_FREQ))))
-
-                #Create Slow Trajectory
-                trajs_x = np.concatenate((trajs_x, np.linspace(fast_end[0], end[0], int(slow_duration*self.CTRL_FREQ))))
-                trajs_y = np.concatenate((trajs_y, np.linspace(fast_end[1], end[1], int(slow_duration*self.CTRL_FREQ))))
-
-
+            trajs_x = np.concatenate((trajs_x, np.linspace(start[0], end[0], int(duration*self.CTRL_FREQ))))
+            trajs_y = np.concatenate((trajs_y, np.linspace(start[1], end[1], int(duration*self.CTRL_FREQ))))
                                      
         return trajs_x, trajs_y
 
@@ -180,7 +152,7 @@ class Controller():
         gate4 = self.NOMINAL_GATES[3]
 
         ### INPUT ORDER OF GATES HERE ###
-        gates_ordered = [gate3,gate2,gate4,gate1]
+        gates_ordered = [gate1,gate3,gate4,gate2,gate1,gate4]
 
         #########################
 
@@ -267,7 +239,7 @@ class Controller():
         #########################
         # Flight splits:
         cmdFullStateStart = 3
-        duration = 35
+        duration = 45
 
         cmdFullStateEnd = cmdFullStateStart + duration
 
